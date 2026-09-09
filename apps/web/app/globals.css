@@ -1,0 +1,64 @@
+@import "tailwindcss";
+
+/* Warm/pastoral identity (see the "Koino Field Notes" direction) — olive replaces
+   teal as the primary accent, gold/plum/bronze are new secondary and tier accents.
+   background/foreground/card/card-border/input/muted keep their names (they're
+   role names, not color names) with new values underneath. */
+:root {
+  --background: #ede7d9;
+  --foreground: #2a2620;
+  --card: #f8f4ea;
+  --card-border: #dbd0b9;
+  --input: #f1ead8;
+  --muted: #6b6252;
+  --olive: #5c6b3d;
+  --olive-dark: #3e4a29;
+  --gold: #a4741f;
+  --plum: #6b3f52;
+  /* A deliberate gold+plum blend (not a stock color) — "highest honor" tier,
+     reserved for the Admin badge. */
+  --bronze: #93642e;
+  /* Semantic only — errors and the Suspended badge. Never used as the accent. */
+  --danger: #a14c3e;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-border: var(--card-border);
+  --color-input: var(--input);
+  --color-muted: var(--muted);
+  --color-olive: var(--olive);
+  --color-olive-dark: var(--olive-dark);
+  --color-gold: var(--gold);
+  --color-plum: var(--plum);
+  --color-bronze: var(--bronze);
+  --color-danger: var(--danger);
+  --font-sans: var(--font-display);
+  --font-serif: var(--font-read);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #211d18;
+    --foreground: #ede6d8;
+    --card: #2b261f;
+    --card-border: #423a2e;
+    --input: #332c23;
+    --muted: #b7ac97;
+    --olive: #9db06a;
+    --olive-dark: #7c9450;
+    --gold: #d9a254;
+    --plum: #c08aa3;
+    --bronze: #d29b6c;
+    --danger: #d98a78;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
