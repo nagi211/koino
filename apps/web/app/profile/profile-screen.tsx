@@ -35,6 +35,26 @@ import { ProfileWall } from "./profile-wall";
 import { DEFAULT_NAVBAR_BACKGROUND, resolvePanelStyle, resolveTheme } from "./theme";
 import { VerseEditForm } from "./verse-edit-form";
 
+// Below this container width, the 12-col drag/resize grid's w:6 panels shrink to
+// unusable ~170px slivers. Rather than force the grid into a single-column mode,
+// mobile gets its own fixed stack instead: full-width, fixed order and height,
+// not user-adjustable. Per-panel design customization (the "Edit" button —
+// color/font/background) still works identically here; only position/size is
+// fixed, matching what was asked for.
+const MOBILE_BREAKPOINT = 640;
+const MOBILE_PANEL_ORDER: ProfilePanelId[] = ["photo", "latestPost", "aboutMe", "friendSpace", "verse", "wall"];
+const MOBILE_PANEL_HEIGHT: Record<string, number> = {
+  // Tallest of the set: on a pending guest's own profile this holds the full
+  // vouch-request flow (badge, status text, quick-pick chips, textarea, button)
+  // on top of the usual avatar/bio/stats — 420 clipped that combination.
+  photo: 600,
+  latestPost: 420,
+  aboutMe: 220,
+  friendSpace: 220,
+  verse: 240,
+  wall: 420,
+};
+
 const DEFAULT_LAYOUT: ProfilePanelLayoutItem[] = [
   { i: "photo", x: 0, y: 0, w: 6, h: 9 },
   { i: "latestPost", x: 6, y: 0, w: 6, h: 9 },
@@ -394,16 +414,20 @@ export function ProfileScreen({
                   <>
                     <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
                     <div className="absolute right-0 top-full z-20 mt-2 w-48 overflow-hidden rounded-xl border border-card-border bg-card shadow-lg">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditingLayout(true);
-                          setMenuOpen(false);
-                        }}
-                        className="block w-full px-4 py-2 text-left text-sm text-foreground hover:bg-input"
-                      >
-                        Rearrange panels
-                      </button>
+                      {/* Position/size is fixed on mobile (see MOBILE_BREAKPOINT above) —
+                          nothing to rearrange there, so this only makes sense at desktop width. */}
+                      {width >= MOBILE_BREAKPOINT && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingLayout(true);
+                            setMenuOpen(false);
+                          }}
+                          className="block w-full px-4 py-2 text-left text-sm text-foreground hover:bg-input"
+                        >
+                          Rearrange panels
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={() => {
@@ -447,20 +471,29 @@ export function ProfileScreen({
           )}
 
           <div ref={containerRef}>
-            {mounted && (
-              <ReactGridLayout
-                width={width}
-                layout={layout as Layout}
-                gridConfig={{ cols: 12, rowHeight: 30, margin: [16, 16] }}
-                dragConfig={{ enabled: editingLayout, handle: ".panel-drag-handle" }}
-                resizeConfig={{ enabled: editingLayout }}
-                onLayoutChange={(next) => setLayout(next as ProfilePanelLayoutItem[])}
-              >
-                {Object.keys(panels).map((id) => (
-                  <div key={id}>{panels[id]}</div>
-                ))}
-              </ReactGridLayout>
-            )}
+            {mounted &&
+              (width < MOBILE_BREAKPOINT ? (
+                <div className="flex flex-col gap-4">
+                  {MOBILE_PANEL_ORDER.map((id) => (
+                    <div key={id} style={{ height: MOBILE_PANEL_HEIGHT[id] }}>
+                      {panels[id]}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <ReactGridLayout
+                  width={width}
+                  layout={layout as Layout}
+                  gridConfig={{ cols: 12, rowHeight: 30, margin: [16, 16] }}
+                  dragConfig={{ enabled: editingLayout, handle: ".panel-drag-handle" }}
+                  resizeConfig={{ enabled: editingLayout }}
+                  onLayoutChange={(next) => setLayout(next as ProfilePanelLayoutItem[])}
+                >
+                  {Object.keys(panels).map((id) => (
+                    <div key={id}>{panels[id]}</div>
+                  ))}
+                </ReactGridLayout>
+              ))}
           </div>
 
           {/* Deliberately outside the grid (see DEFAULT_LAYOUT above): a react-grid-layout
