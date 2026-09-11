@@ -106,7 +106,7 @@ export function VouchRequestPanel({ guestId }: { guestId: string }) {
   }
 
   if (request.status === "open") {
-    return <p className="text-xs opacity-70">Someone from our community will reach out soon.</p>;
+    return <p className="text-xs opacity-70">Your message is waiting for a leader to see it.</p>;
   }
 
   // "claimed" — a leader has joined; conversation_id is always set for a request

@@ -13,7 +13,7 @@ import { FONT_STACKS } from "./theme";
 // text since it carries context the badge alone doesn't (what to do next, or why
 // posting is blocked), not just a duplicate label.
 const STATUS_COPY: Record<string, string> = {
-  pending: "You're new here. Say hello below, and someone from our community will reach out to get to know you.",
+  pending: "You're new here. Say hello below to request to talk with a community leader.",
   suspended: "Your account has been suspended.",
 };
 

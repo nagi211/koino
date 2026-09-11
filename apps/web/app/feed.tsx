@@ -103,7 +103,7 @@ export function Feed({
       </header>
 
       {profile?.status === "pending" && (
-        <div className="mx-auto w-full max-w-2xl shrink-0 px-3 pt-3 sm:px-8">
+        <div className="mx-auto w-full max-w-2xl shrink-0 px-3 pb-3 pt-3 sm:px-8">
           <div className="rounded-2xl border border-gold/40 bg-gold/10 p-4">
             <p className="mb-3 text-sm font-medium text-foreground">
               New here? We&rsquo;d love to get to know you — tell us a little about what brought you to Koino.

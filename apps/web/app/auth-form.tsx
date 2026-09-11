@@ -151,8 +151,8 @@ export function AuthForm({
 
       {mode === "sign-up" && (
         <p className="text-xs text-muted">
-          New accounts start as a guest so you can look around. When you&rsquo;re ready, say hello and someone from our
-          community will reach out to get to know you.
+          New accounts start as a guest so you can look around. When you&rsquo;re ready, say hello to request to talk
+          with a community leader.
         </p>
       )}
     </form>
