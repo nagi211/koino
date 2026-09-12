@@ -10,9 +10,9 @@ import { PostCard } from "./post-card";
 import { PostComposer } from "./post-composer";
 import { PostMenu } from "./post-menu";
 import { ReportModal } from "./report-modal";
+import { GuestBanner } from "./guest-banner";
 import { StoriesRow } from "./stories-row";
 import { VouchGateModal } from "./vouch-gate-modal";
-import { VouchRequestPanel } from "./profile/vouch-request-panel";
 
 export function Feed({
   initialPosts,
@@ -40,6 +40,11 @@ export function Feed({
   const [reportTarget, setReportTarget] = useState<PostWithAuthor | null>(null);
   const [scrolled, setScrolled] = useState(false);
   const [vouchGateOpen, setVouchGateOpen] = useState(false);
+  // GuestBanner fetches its own status on mount and has no other way to learn a
+  // request was just submitted inside the dialog (sibling components, not
+  // parent/child) — bumping this key remounts it (fresh fetch) whenever the
+  // dialog closes, so it can't keep showing a stale "Say hello" prompt.
+  const [guestBannerKey, setGuestBannerKey] = useState(0);
 
   // Not logged in -> sign up. Logged in but still a guest -> the vouch gate,
   // not a silent RLS failure on submit (posting/liking/commenting/reporting/
@@ -104,12 +109,7 @@ export function Feed({
 
       {profile?.status === "pending" && (
         <div className="mx-auto w-full max-w-2xl shrink-0 px-3 pb-3 pt-3 sm:px-8">
-          <div className="rounded-2xl border border-gold/40 bg-gold/10 p-4">
-            <p className="mb-3 text-sm font-medium text-foreground">
-              New here? We&rsquo;d love to get to know you — tell us a little about what brought you to Koino.
-            </p>
-            <VouchRequestPanel guestId={profile.id} />
-          </div>
+          <GuestBanner key={guestBannerKey} guestId={profile.id} onSayHello={() => setVouchGateOpen(true)} />
         </div>
       )}
 
@@ -175,7 +175,16 @@ export function Feed({
 
       <AuthModal open={authMode !== null} initialMode={authMode ?? "sign-up"} onClose={() => setAuthMode(null)} />
 
-      {profile && <VouchGateModal open={vouchGateOpen} onClose={() => setVouchGateOpen(false)} guestId={profile.id} />}
+      {profile && (
+        <VouchGateModal
+          open={vouchGateOpen}
+          onClose={() => {
+            setVouchGateOpen(false);
+            setGuestBannerKey((k) => k + 1);
+          }}
+          guestId={profile.id}
+        />
+      )}
 
       {profile && (
         <PostComposer open={composerOpen} onClose={() => setComposerOpen(false)} authorId={profile.id} />
