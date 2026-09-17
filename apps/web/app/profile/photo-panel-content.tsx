@@ -1,7 +1,17 @@
 import Image from "next/image";
 import { useState } from "react";
-import type { FriendshipStatus, PanelStyle, PhotoPanelTextColors, PhotoPanelTextSizes, PhotoPanelTextVisibility, Profile, ProfilePhotoSettings } from "@koino/core";
+import type {
+  FamilyConnectionStatus,
+  FriendshipStatus,
+  PanelStyle,
+  PhotoPanelTextColors,
+  PhotoPanelTextSizes,
+  PhotoPanelTextVisibility,
+  Profile,
+  ProfilePhotoSettings,
+} from "@koino/core";
 import { Avatar } from "../avatar";
+import { AddFamilyButton } from "./add-family-button";
 import { AddFriendButton } from "./add-friend-button";
 import { ProfileLikeButton } from "./profile-like-button";
 import { ProfileViewersButton } from "./profile-viewers-button";
@@ -212,6 +222,7 @@ function ActionSlot({
   target,
   initiallyLiked,
   friendStatus,
+  familyStatus,
   onLikeToggle,
   requireAuth,
 }: {
@@ -220,6 +231,7 @@ function ActionSlot({
   target: Profile;
   initiallyLiked: boolean;
   friendStatus: FriendshipStatus;
+  familyStatus: FamilyConnectionStatus;
   onLikeToggle: (liked: boolean) => void;
   requireAuth: (action: () => void) => void;
 }) {
@@ -234,6 +246,7 @@ function ActionSlot({
         requireAuth={requireAuth}
       />
       <AddFriendButton viewer={viewer} targetId={target.id} initialStatus={friendStatus} />
+      <AddFamilyButton viewer={viewer} targetId={target.id} initialStatus={familyStatus} />
     </div>
   );
 }
@@ -288,6 +301,7 @@ export function PhotoPanelContent({
   totalViewCount,
   initiallyLiked,
   friendStatus,
+  familyStatus,
   requireAuth,
 }: {
   target: Profile;
@@ -300,6 +314,7 @@ export function PhotoPanelContent({
   totalViewCount: number;
   initiallyLiked: boolean;
   friendStatus: FriendshipStatus;
+  familyStatus: FamilyConnectionStatus;
   requireAuth: (action: () => void) => void;
 }) {
   const [likeCount, setLikeCount] = useState(initialLikeCount);
@@ -313,6 +328,7 @@ export function PhotoPanelContent({
       target={target}
       initiallyLiked={initiallyLiked}
       friendStatus={friendStatus}
+      familyStatus={familyStatus}
       onLikeToggle={onLikeToggle}
       requireAuth={requireAuth}
     />

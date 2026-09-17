@@ -14,6 +14,8 @@ const TYPE_COPY: Record<NotificationWithActor["type"], string> = {
   profile_comment: "posted on your wall",
   friend_request: "sent you a friend request",
   friend_accept: "accepted your friend request",
+  family_request: "wants to connect as family",
+  family_accept: "confirmed you as family",
   vouch_claimed: "reached out to get to know you",
   vouch_approved: "welcomed you into the community!",
   vouch_declined: "wasn't able to continue the conversation that time",

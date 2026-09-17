@@ -23,12 +23,32 @@ function withAuthorUsername(rows: RawPostRow[]): PostWithAuthor[] {
 // relationship `profiles(username)` should follow.
 const FEED_SELECT = "*, profiles!posts_author_id_fkey(username, avatar_url), post_likes(count), post_comments(count)";
 
-/** The public feed — RLS already restricts this to status='approved' (or your own posts). */
+/**
+ * The public feed — RLS already restricts this to status='approved' (or your own
+ * posts). audience='public' is also filtered here explicitly, not just left to
+ * RLS: a viewer who happens to be someone's confirmed family is *also* granted
+ * visibility into that family's posts by a separate policy, and without this
+ * filter their family content would bleed into the general public feed instead
+ * of staying on the dedicated /family page.
+ */
 export async function getApprovedFeed(client: SupabaseClient<Database>): Promise<PostWithAuthor[]> {
   const { data, error } = await client
     .from("posts")
     .select(FEED_SELECT)
     .eq("status", "approved")
+    .eq("audience", "public")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+
+  return withAuthorUsername(data as unknown as RawPostRow[]);
+}
+
+/** The family-only feed — RLS scopes this to the caller's own confirmed family circle. */
+export async function getFamilyFeed(client: SupabaseClient<Database>): Promise<PostWithAuthor[]> {
+  const { data, error } = await client
+    .from("posts")
+    .select(FEED_SELECT)
+    .eq("audience", "family")
     .order("created_at", { ascending: false });
   if (error) throw error;
 
@@ -49,7 +69,7 @@ export async function getRecentPostsForModerator(
   viewerId: string,
   viewerRole: ProfileRole
 ): Promise<PostWithAuthor[]> {
-  let query = client.from("posts").select(FEED_SELECT).eq("status", "approved");
+  let query = client.from("posts").select(FEED_SELECT).eq("status", "approved").eq("audience", "public");
 
   if (viewerRole === "leader") {
     const { data: vouched, error: vouchedError } = await client
@@ -79,7 +99,12 @@ export async function getPostsByIds(client: SupabaseClient<Database>, ids: strin
   return withAuthorUsername(data as unknown as RawPostRow[]);
 }
 
-/** For the profile page's "Latest Post" panel. */
+/**
+ * For the profile page's "Latest Post" panel — public to any visitor, so this
+ * must never surface a family-only post, and must skip past one when picking
+ * "latest" (otherwise a more-recent family post would make this return nothing
+ * for a stranger, even though the author has an actual public post to show).
+ */
 export async function getLatestApprovedPost(
   client: SupabaseClient<Database>,
   authorId: string
@@ -88,6 +113,7 @@ export async function getLatestApprovedPost(
     .from("posts")
     .select(FEED_SELECT)
     .eq("status", "approved")
+    .eq("audience", "public")
     .eq("author_id", authorId)
     .order("created_at", { ascending: false })
     .limit(1)
@@ -98,7 +124,11 @@ export async function getLatestApprovedPost(
   return withAuthorUsername([data as unknown as RawPostRow])[0];
 }
 
-/** RLS enforces author must have status='active'; guests will get a permission error. */
+/**
+ * RLS enforces: public posts require status='active'; family posts only require
+ * not being suspended (guests can post to their own family circle — see
+ * 0032_family_circles.sql).
+ */
 export async function createPost(client: SupabaseClient<Database>, authorId: string, input: CreatePostInput): Promise<Post> {
   const { data, error } = await client
     .from("posts")
@@ -108,6 +138,7 @@ export async function createPost(client: SupabaseClient<Database>, authorId: str
       body: input.body ?? null,
       media_url: input.media_url ?? null,
       background: input.background ?? null,
+      audience: input.audience,
     })
     .select()
     .single();

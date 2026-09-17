@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
-import type { FriendshipStatus } from "@koino/core";
+import type { FamilyConnectionStatus, FriendshipStatus } from "@koino/core";
 import {
   getFriends,
   getLatestApprovedPost,
+  getMyFamilyStatuses,
   getMyFriendStatuses,
   getMyProfile,
   getProfileByUsername,
@@ -38,18 +39,22 @@ export default async function ProfileByUsernamePage({ params }: { params: Promis
     await recordProfileView(supabase, target.id, viewer.id).catch(() => {});
   }
 
-  const [topFriends, wallComments, targetFriends, friendStatuses, latestPost, stats, liked, unreadNotificationCount] = await Promise.all([
-    getTopFriends(supabase, target.id),
-    getProfileComments(supabase, target.id),
-    getFriends(supabase, target.id),
-    !isSelf
-      ? getMyFriendStatuses(supabase, viewer.id, [target.id])
-      : Promise.resolve({} as Record<string, FriendshipStatus>),
-    getLatestApprovedPost(supabase, target.id),
-    getProfileStats(supabase, target.id),
-    !isSelf ? hasLikedProfile(supabase, target.id, viewer.id) : Promise.resolve(false),
-    getUnreadNotificationCount(supabase, viewer.id),
-  ]);
+  const [topFriends, wallComments, targetFriends, friendStatuses, familyStatuses, latestPost, stats, liked, unreadNotificationCount] =
+    await Promise.all([
+      getTopFriends(supabase, target.id),
+      getProfileComments(supabase, target.id),
+      getFriends(supabase, target.id),
+      !isSelf
+        ? getMyFriendStatuses(supabase, viewer.id, [target.id])
+        : Promise.resolve({} as Record<string, FriendshipStatus>),
+      !isSelf
+        ? getMyFamilyStatuses(supabase, viewer.id, [target.id])
+        : Promise.resolve({} as Record<string, FamilyConnectionStatus>),
+      getLatestApprovedPost(supabase, target.id),
+      getProfileStats(supabase, target.id),
+      !isSelf ? hasLikedProfile(supabase, target.id, viewer.id) : Promise.resolve(false),
+      getUnreadNotificationCount(supabase, viewer.id),
+    ]);
 
   return (
     <ProfileScreen
@@ -61,6 +66,7 @@ export default async function ProfileByUsernamePage({ params }: { params: Promis
       myFriends={isSelf ? targetFriends : []}
       friendCount={targetFriends.length}
       friendStatus={friendStatuses[target.id] ?? "none"}
+      familyStatus={familyStatuses[target.id] ?? "none"}
       latestPost={latestPost}
       likeCount={stats.likeCount}
       viewerCount={stats.viewerCount}

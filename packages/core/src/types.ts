@@ -7,6 +7,22 @@ export type PostStatus = "pending" | "approved" | "rejected" | "hidden";
 export type ReportTarget = "post" | "message" | "profile_comment";
 export type FriendshipRowStatus = "pending" | "accepted";
 export type FriendshipStatus = "none" | "pending_sent" | "pending_received" | "friends";
+export type PostAudience = "public" | "family";
+export type FamilyConnectionRowStatus = "pending" | "accepted";
+export type FamilyConnectionStatus = "none" | "pending_sent" | "pending_received" | "family";
+export type FamilyRelationship =
+  | "mother"
+  | "father"
+  | "sister"
+  | "brother"
+  | "grandmother"
+  | "grandfather"
+  | "aunt"
+  | "uncle"
+  | "cousin"
+  | "spouse"
+  | "child"
+  | "other";
 export type NotificationType =
   | "post_like"
   | "post_comment"
@@ -14,6 +30,8 @@ export type NotificationType =
   | "profile_comment"
   | "friend_request"
   | "friend_accept"
+  | "family_request"
+  | "family_accept"
   | "vouch_claimed"
   | "vouch_approved"
   | "vouch_declined"
@@ -198,6 +216,7 @@ export type Post = {
   media_url: string | null;
   background: string | null;
   status: PostStatus;
+  audience: PostAudience;
   ai_flag_reason: string | null;
   created_at: string;
 };
@@ -240,6 +259,17 @@ export type Friendship = {
 };
 
 export type FriendshipWithProfile = { friendship_id: string; profile: Profile };
+
+export type FamilyConnection = {
+  id: string;
+  requester_id: string;
+  addressee_id: string;
+  relationship: FamilyRelationship;
+  status: FamilyConnectionRowStatus;
+  created_at: string;
+};
+
+export type FamilyConnectionWithProfile = { connection_id: string; relationship: FamilyRelationship; profile: Profile };
 
 export type Story = {
   id: string;
@@ -344,6 +374,12 @@ export type Database = {
       post_comments: { Row: PostComment; Insert: Partial<PostComment> & { post_id: string; author_id: string; body: string }; Update: Partial<PostComment>; Relationships: [] };
       saved_posts: { Row: SavedPost; Insert: Partial<SavedPost> & { post_id: string; profile_id: string }; Update: Partial<SavedPost>; Relationships: [] };
       friendships: { Row: Friendship; Insert: Partial<Friendship> & { requester_id: string; addressee_id: string }; Update: Partial<Friendship>; Relationships: [] };
+      family_connections: {
+        Row: FamilyConnection;
+        Insert: Partial<FamilyConnection> & { requester_id: string; addressee_id: string; relationship: FamilyRelationship };
+        Update: Partial<FamilyConnection>;
+        Relationships: [];
+      };
       stories: { Row: Story; Insert: Partial<Story> & { author_id: string; media_url: string }; Update: Partial<Story>; Relationships: [] };
       top_friends: { Row: TopFriend; Insert: Partial<TopFriend> & { profile_id: string; friend_id: string; position: number }; Update: Partial<TopFriend>; Relationships: [] };
       profile_comments: { Row: ProfileComment; Insert: Partial<ProfileComment> & { profile_id: string; author_id: string; body: string }; Update: Partial<ProfileComment>; Relationships: [] };

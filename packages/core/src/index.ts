@@ -8,6 +8,7 @@ export * from "./queries/conversations";
 export * from "./queries/posts";
 export * from "./queries/engagement";
 export * from "./queries/friends";
+export * from "./queries/family";
 export * from "./queries/stories";
 export * from "./queries/top-friends";
 export * from "./queries/profile-comments";

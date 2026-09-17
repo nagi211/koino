@@ -44,6 +44,17 @@ function UserIcon() {
   );
 }
 
+function FamilyIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="8" cy="6" r="2.5" />
+      <circle cx="16" cy="6" r="2.5" />
+      <path d="M3 20c0-3.5 2.2-6 5-6s5 2.5 5 6" strokeLinecap="round" />
+      <path d="M11 20c0-3.5 2.2-6 5-6s5 2.5 5 6" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 function ShieldIcon() {
   return (
     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
@@ -110,6 +121,10 @@ export function Sidebar({
           <Link href="/profile" className={itemClass(pathname === "/profile")}>
             <UserIcon />
             Profile
+          </Link>
+          <Link href="/family" className={itemClass(pathname === "/family")}>
+            <FamilyIcon />
+            Family
           </Link>
           {(profile.role === "leader" || profile.role === "admin") && profile.status === "active" && (
             <Link href="/moderation" className={itemClass(pathname === "/moderation")}>

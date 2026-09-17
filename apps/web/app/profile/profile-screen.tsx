@@ -7,6 +7,7 @@ import ReactGridLayout, { useContainerWidth, type Layout } from "react-grid-layo
 import "react-grid-layout/css/styles.css";
 import { updateProfile } from "@koino/core";
 import type {
+  FamilyConnectionStatus,
   FriendshipStatus,
   FriendshipWithProfile,
   Profile,
@@ -115,6 +116,7 @@ export function ProfileScreen({
   myFriends,
   friendCount,
   friendStatus,
+  familyStatus,
   latestPost,
   likeCount,
   viewerCount,
@@ -130,6 +132,7 @@ export function ProfileScreen({
   myFriends: FriendshipWithProfile[];
   friendCount: number;
   friendStatus: FriendshipStatus;
+  familyStatus: FamilyConnectionStatus;
   latestPost: PostWithAuthor | null;
   likeCount: number;
   viewerCount: number;
@@ -246,6 +249,7 @@ export function ProfileScreen({
           totalViewCount={totalViewCount}
           initiallyLiked={initiallyLiked}
           friendStatus={friendStatus}
+          familyStatus={familyStatus}
           requireAuth={requireAuth}
         />
       </Panel>

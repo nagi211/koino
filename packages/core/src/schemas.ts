@@ -27,6 +27,7 @@ export const createPostSchema = z
     body: z.string().max(2000).optional(),
     media_url: z.string().url().optional(),
     background: z.enum(POST_BACKGROUNDS).optional(),
+    audience: z.enum(["public", "family"]).default("public"),
   })
   .refine((data) => data.type === "text" || !!data.media_url, {
     message: "Choose a file to upload",

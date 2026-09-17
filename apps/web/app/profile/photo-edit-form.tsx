@@ -615,6 +615,7 @@ export function PhotoEditForm({
                 totalViewCount={0}
                 initiallyLiked={false}
                 friendStatus="none"
+                familyStatus="none"
                 requireAuth={(action) => action()}
               />
             </Panel>

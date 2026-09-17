@@ -16,10 +16,12 @@ export function PostComposer({
   open,
   onClose,
   authorId,
+  audience = "public",
 }: {
   open: boolean;
   onClose: () => void;
   authorId: string;
+  audience?: "public" | "family";
 }) {
   const router = useRouter();
   const [type, setType] = useState<PostType>("text");
@@ -87,6 +89,7 @@ export function PostComposer({
       body: body || undefined,
       media_url,
       background: type === "text" ? background ?? undefined : undefined,
+      audience,
     });
     if (!parsed.success) {
       setError(parsed.error.issues[0]?.message ?? "Invalid post");
