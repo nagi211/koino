@@ -21,7 +21,7 @@ export function getMyLikedPostIds(client: SupabaseClient<Database>, profileId: s
   return getMyPostIds(client, "post_likes", profileId, postIds);
 }
 
-/** RLS enforces status='active' and the post being approved. */
+/** RLS enforces non-suspended and the post being approved (and, implicitly, visible to the caller). */
 export async function likePost(client: SupabaseClient<Database>, postId: string, profileId: string) {
   const { error } = await client.from("post_likes").insert({ post_id: postId, profile_id: profileId });
   if (error) throw error;

@@ -49,8 +49,8 @@ export function Feed({
   const [scrolled, setScrolled] = useState(false);
 
   // Not logged in -> sign up. Logged in but still a guest -> the vouch gate,
-  // not a silent RLS failure on submit (posting/liking/commenting/reporting/
-  // stories all require status='active'). Everyone else -> just do it.
+  // not a silent RLS failure on submit (posting/commenting/reporting/stories
+  // all require status='active'). Everyone else -> just do it.
   function requireAuth(action: () => void) {
     if (!profile) {
       setAuthMode("sign-up");
@@ -60,6 +60,19 @@ export function Feed({
       onOpenVouchGate();
       return;
     }
+    action();
+  }
+
+  // Looser gate for likes: any non-suspended account can react (RLS matches —
+  // see 0033_guest_reactions.sql), since a like is reversible and never puts a
+  // guest's own text in front of anyone. Suspended accounts get no feedback
+  // here, same as everywhere else their write attempts are silently inert.
+  function requireEngagement(action: () => void) {
+    if (!profile) {
+      setAuthMode("sign-up");
+      return;
+    }
+    if (profile.status === "suspended") return;
     action();
   }
 
@@ -156,6 +169,7 @@ export function Feed({
                     profile={profile}
                     initiallyLiked={likedSet.has(post.id)}
                     requireAuth={requireAuth}
+                    requireEngagement={requireEngagement}
                     lightText={post.type === "text" && !!post.background}
                   />
                 }

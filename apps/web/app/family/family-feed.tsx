@@ -38,13 +38,19 @@ export function FamilyFeed({
   const [vouchGateOpen, setVouchGateOpen] = useState(false);
   const [familyDrawerOpen, setFamilyDrawerOpen] = useState(false);
 
-  // Liking/commenting/reporting still require an active account, same as the
-  // public feed — only *posting* to family is open to any non-suspended member.
+  // Commenting/reporting still require an active account, same as the public
+  // feed — only *posting* and *liking* within family are open to any
+  // non-suspended member (see 0033_guest_reactions.sql).
   function requireAuth(action: () => void) {
     if (profile.status !== "active") {
       setVouchGateOpen(true);
       return;
     }
+    action();
+  }
+
+  function requireEngagement(action: () => void) {
+    if (profile.status === "suspended") return;
     action();
   }
 
@@ -84,6 +90,7 @@ export function FamilyFeed({
                       profile={profile}
                       initiallyLiked={likedSet.has(post.id)}
                       requireAuth={requireAuth}
+                      requireEngagement={requireEngagement}
                       lightText={post.type === "text" && !!post.background}
                     />
                   }

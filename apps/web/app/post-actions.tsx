@@ -27,12 +27,18 @@ export function PostActions({
   profile,
   initiallyLiked,
   requireAuth,
+  requireEngagement,
   lightText,
 }: {
   post: PostWithAuthor;
   profile: Profile | null;
   initiallyLiked: boolean;
   requireAuth: (action: () => void) => void;
+  /** Gate for likes specifically — more permissive than requireAuth (open to any
+   * non-suspended account, guests included) since a like is reversible and never
+   * puts a guest's own text in front of anyone. Comments still go through
+   * requireAuth/CommentPanel's own active-only check. */
+  requireEngagement: (action: () => void) => void;
   lightText: boolean;
 }) {
   const [liked, setLiked] = useState(initiallyLiked);
@@ -77,7 +83,7 @@ export function PostActions({
       <div className="flex items-center gap-5 text-sm">
         <button
           type="button"
-          onClick={() => requireAuth(toggleLike)}
+          onClick={() => requireEngagement(toggleLike)}
           className={`flex items-center gap-1.5 ${liked ? likedClass : textClass}`}
         >
           <HeartIcon filled={liked} />
