@@ -93,15 +93,21 @@ export function NotificationBell({
     }
   }
 
+  // "block" on the unbordered variant matters: this button sits two <div>s deep
+  // (for the dropdown), so unlike a sibling icon-button that's a direct flex
+  // child (auto-blockified by the flex spec), this one keeps its default
+  // inline-block display — which picks up a line-box/descender gap from its
+  // block-level wrapper and renders a few px taller than it actually is,
+  // throwing off vertical centering next to the other header icons.
   const buttonClass = bordered
     ? `flex h-9 w-9 items-center justify-center rounded-full border hover:opacity-80 ${iconColor ? "" : "border-card-border text-muted"}`
-    : "text-muted hover:text-foreground";
+    : "block text-muted hover:text-foreground";
   const buttonStyle = bordered && iconColor ? { borderColor: iconColor, color: iconColor } : undefined;
 
   return (
     <div className="relative shrink-0">
       <button type="button" onClick={handleToggle} aria-label="Notifications" className={`relative ${buttonClass}`} style={buttonStyle}>
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" className="block">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M6 10a6 6 0 1 1 12 0c0 4 1.5 5.5 1.5 5.5h-15S6 14 6 10Z" strokeLinecap="round" strokeLinejoin="round" />
           <path d="M10 18.5a2 2 0 0 0 4 0" strokeLinecap="round" />
         </svg>

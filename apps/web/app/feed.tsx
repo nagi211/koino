@@ -94,7 +94,7 @@ export function Feed({
                 aria-label="Say hello"
                 className="text-muted hover:text-foreground md:hidden"
               >
-                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" className="block">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2">
                   <circle cx="12" cy="12" r="9" />
                   <circle cx="9" cy="10.5" r="0.75" fill="currentColor" stroke="none" />
                   <circle cx="15" cy="10.5" r="0.75" fill="currentColor" stroke="none" />
@@ -109,7 +109,7 @@ export function Feed({
               aria-label="Friends"
               className="text-muted hover:text-foreground md:hidden"
             >
-              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" className="block">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="9" cy="8" r="3" />
                 <circle cx="17" cy="9" r="2.5" />
                 <path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5" strokeLinecap="round" />
