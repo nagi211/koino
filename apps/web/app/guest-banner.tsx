@@ -33,12 +33,17 @@ export function GuestBanner({ guestId, onSayHello }: { guestId: string; onSayHel
       return false;
     }
   });
+  // Clicking the ✕ doesn't dismiss immediately — it swaps the banner row for a
+  // one-time choice, since "just for now" and "don't show again" are different
+  // enough consequences to deserve asking, without needing a permanently-visible
+  // second row for something only relevant right as you're dismissing.
+  const [confirming, setConfirming] = useState(false);
 
   useEffect(() => {
     getMyVouchRequest(createClient(), guestId).then(setRequest);
   }, [guestId]);
 
-  function dismiss() {
+  function dismissOnce() {
     setHidden(true);
   }
 
@@ -79,27 +84,46 @@ export function GuestBanner({ guestId, onSayHello }: { guestId: string; onSayHel
     );
   }
 
-  return (
-    <div className="flex flex-col gap-1 rounded-2xl border border-gold/40 bg-gold/10 px-4 py-2.5">
-      <div className="flex items-center justify-between gap-3">
-        <p className="min-w-0 truncate text-sm font-medium text-foreground">{text}</p>
+  if (confirming) {
+    return (
+      <div className="flex items-center justify-between gap-3 rounded-2xl border border-gold/40 bg-gold/10 px-4 py-2.5">
+        <p className="min-w-0 truncate text-sm font-medium text-foreground">Hide this — just for now, or for good?</p>
         <div className="flex shrink-0 items-center gap-2">
-          {action}
           <button
             type="button"
-            onClick={dismiss}
-            aria-label="Dismiss"
-            className="text-muted hover:text-foreground"
+            onClick={dismissOnce}
+            className="rounded-xl border border-card-border px-3 py-1.5 text-sm text-muted hover:text-foreground"
           >
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
-            </svg>
+            Just now
+          </button>
+          <button
+            type="button"
+            onClick={dontShowAgain}
+            className="rounded-xl bg-olive-dark px-3 py-1.5 text-sm font-medium text-white shadow-sm"
+          >
+            Don&apos;t show again
           </button>
         </div>
       </div>
-      <button type="button" onClick={dontShowAgain} className="self-end text-xs text-muted hover:text-foreground hover:underline">
-        Don&apos;t show this again
-      </button>
+    );
+  }
+
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-2xl border border-gold/40 bg-gold/10 px-4 py-2.5">
+      <p className="min-w-0 truncate text-sm font-medium text-foreground">{text}</p>
+      <div className="flex shrink-0 items-center gap-2">
+        {action}
+        <button
+          type="button"
+          onClick={() => setConfirming(true)}
+          aria-label="Dismiss"
+          className="text-muted hover:text-foreground"
+        >
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
+          </svg>
+        </button>
+      </div>
     </div>
   );
 }
