@@ -95,7 +95,10 @@ export function Feed({
                 className="text-muted hover:text-foreground md:hidden"
               >
                 <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M12 20.5C6 16 3 12.5 3 8.5 3 5.7 5.2 4 7.5 4 9.2 4 10.7 5 12 6.5 13.3 5 14.8 4 16.5 4 18.8 4 21 5.7 21 8.5c0 4-3 7.5-9 12Z" strokeLinejoin="round" />
+                  <circle cx="12" cy="12" r="9" />
+                  <circle cx="9" cy="10.5" r="0.75" fill="currentColor" stroke="none" />
+                  <circle cx="15" cy="10.5" r="0.75" fill="currentColor" stroke="none" />
+                  <path d="M8.5 14.5c1 1.3 2.2 2 3.5 2s2.5-.7 3.5-2" strokeLinecap="round" />
                 </svg>
               </button>
             )}

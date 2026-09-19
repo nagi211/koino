@@ -11,7 +11,7 @@ export function VouchGateModal({ open, onClose, guestId }: { open: boolean; onCl
     <Modal open={open} onClose={onClose}>
       <h2 className="mb-2 text-lg font-semibold text-foreground">Let&apos;s get to know you first</h2>
       <p className="mb-4 text-sm text-muted">
-        Posting and reacting are for people who are part of the community. Say hello below to request to talk with a leader.
+        Posting and commenting are for people who are part of the community. Say hello below to request to talk with a leader.
       </p>
       <VouchRequestPanel guestId={guestId} />
     </Modal>
