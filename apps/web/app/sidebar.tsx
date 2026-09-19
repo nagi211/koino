@@ -44,16 +44,21 @@ function UserIcon() {
   );
 }
 
-// A friendly face, not a heart — hearts now mean "like" (guests can react to
-// posts too, see 0033_guest_reactions.sql), so this needed to read as a
-// greeting instead of colliding with that.
+// A waving hand, not a heart — hearts now mean "like" (guests can react to
+// posts too, see 0033_guest_reactions.sql), so this needed to read as
+// reaching out to connect instead of colliding with that.
 function WaveIcon() {
   return (
     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
-      <circle cx="12" cy="12" r="9" />
-      <circle cx="9" cy="10.5" r="0.75" fill="currentColor" stroke="none" />
-      <circle cx="15" cy="10.5" r="0.75" fill="currentColor" stroke="none" />
-      <path d="M8.5 14.5c1 1.3 2.2 2 3.5 2s2.5-.7 3.5-2" strokeLinecap="round" />
+      <path d="M8 15V5.5a1.3 1.3 0 0 1 2.6 0V13" strokeLinecap="round" />
+      <path d="M10.6 13V4a1.3 1.3 0 0 1 2.6 0v9.5" strokeLinecap="round" />
+      <path d="M13.2 13.5V6a1.3 1.3 0 0 1 2.6 0v9" strokeLinecap="round" />
+      <path
+        d="M15.8 15V9a1.3 1.3 0 0 1 2.6 0v6c0 2.8-1.8 5-4.5 5H10c-1.8 0-3-.6-4-1.8l-2.3-2.9a1.15 1.15 0 0 1 1.8-1.43L7 15"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path d="M20.2 5.5c.7.8 1.1 1.7 1.1 2.8s-.4 2-1.1 2.8" strokeLinecap="round" />
     </svg>
   );
 }
