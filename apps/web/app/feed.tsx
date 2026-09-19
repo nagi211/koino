@@ -23,6 +23,10 @@ export function Feed({
   stories,
   onOpenFriends,
   unreadNotificationCount,
+  vouchGateOpen,
+  onOpenVouchGate,
+  onCloseVouchGate,
+  guestBannerKey,
 }: {
   initialPosts: PostWithAuthor[];
   profile: Profile | null;
@@ -32,6 +36,10 @@ export function Feed({
   stories: StoryWithAuthor[];
   onOpenFriends: () => void;
   unreadNotificationCount: number;
+  vouchGateOpen: boolean;
+  onOpenVouchGate: () => void;
+  onCloseVouchGate: () => void;
+  guestBannerKey: number;
 }) {
   const likedSet = new Set(likedPostIds);
   const savedSet = new Set(savedPostIds);
@@ -39,12 +47,6 @@ export function Feed({
   const [composerOpen, setComposerOpen] = useState(false);
   const [reportTarget, setReportTarget] = useState<PostWithAuthor | null>(null);
   const [scrolled, setScrolled] = useState(false);
-  const [vouchGateOpen, setVouchGateOpen] = useState(false);
-  // GuestBanner fetches its own status on mount and has no other way to learn a
-  // request was just submitted inside the dialog (sibling components, not
-  // parent/child) — bumping this key remounts it (fresh fetch) whenever the
-  // dialog closes, so it can't keep showing a stale "Say hello" prompt.
-  const [guestBannerKey, setGuestBannerKey] = useState(0);
 
   // Not logged in -> sign up. Logged in but still a guest -> the vouch gate,
   // not a silent RLS failure on submit (posting/liking/commenting/reporting/
@@ -55,7 +57,7 @@ export function Feed({
       return;
     }
     if (profile.status !== "active") {
-      setVouchGateOpen(true);
+      onOpenVouchGate();
       return;
     }
     action();
@@ -68,6 +70,22 @@ export function Feed({
         <div className="hidden md:block" />
         {profile ? (
           <div className="flex items-center gap-3">
+            {/* Sidebar has its own permanent "Say hello" entry from md: up (see
+                sidebar.tsx) — this covers the gap below that, where the sidebar
+                itself is hidden, so a guest who dismissed the inline banner still
+                has a way back into the vouch-gate dialog. */}
+            {profile.status === "pending" && (
+              <button
+                type="button"
+                onClick={onOpenVouchGate}
+                aria-label="Say hello"
+                className="text-muted hover:text-foreground md:hidden"
+              >
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 20.5C6 16 3 12.5 3 8.5 3 5.7 5.2 4 7.5 4 9.2 4 10.7 5 12 6.5 13.3 5 14.8 4 16.5 4 18.8 4 21 5.7 21 8.5c0 4-3 7.5-9 12Z" strokeLinejoin="round" />
+                </svg>
+              </button>
+            )}
             {/* Friends + bell: sidebar covers both from md: up, so these are mobile-only. */}
             <button
               type="button"
@@ -109,7 +127,7 @@ export function Feed({
 
       {profile?.status === "pending" && (
         <div className="mx-auto w-full max-w-2xl shrink-0 px-3 pb-3 pt-3 sm:px-8">
-          <GuestBanner key={guestBannerKey} guestId={profile.id} onSayHello={() => setVouchGateOpen(true)} />
+          <GuestBanner key={guestBannerKey} guestId={profile.id} onSayHello={onOpenVouchGate} />
         </div>
       )}
 
@@ -128,7 +146,7 @@ export function Feed({
         onScroll={(e) => setScrolled(e.currentTarget.scrollTop > 10)}
       >
         {initialPosts.map((post) => (
-          <li key={post.id} className="flex h-full w-full snap-start justify-center p-3 sm:p-8">
+          <li key={post.id} className="flex h-full w-full snap-start justify-center p-3 sm:p-8 [scroll-snap-stop:always]">
             <div className="w-full max-w-2xl">
               <PostCard
                 post={post}
@@ -175,16 +193,7 @@ export function Feed({
 
       <AuthModal open={authMode !== null} initialMode={authMode ?? "sign-up"} onClose={() => setAuthMode(null)} />
 
-      {profile && (
-        <VouchGateModal
-          open={vouchGateOpen}
-          onClose={() => {
-            setVouchGateOpen(false);
-            setGuestBannerKey((k) => k + 1);
-          }}
-          guestId={profile.id}
-        />
-      )}
+      {profile && <VouchGateModal open={vouchGateOpen} onClose={onCloseVouchGate} guestId={profile.id} />}
 
       {profile && (
         <PostComposer open={composerOpen} onClose={() => setComposerOpen(false)} authorId={profile.id} />

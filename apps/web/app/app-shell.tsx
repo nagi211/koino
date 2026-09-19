@@ -28,10 +28,31 @@ export function AppShell({
   unreadNotificationCount: number;
 }) {
   const [friendsDrawerOpen, setFriendsDrawerOpen] = useState(false);
+  // Lifted out of Feed so the sidebar's own "Say hello" entry can open the same
+  // dialog — a guest who dismissed the feed's inline banner still needs a
+  // permanent way back in, and that entry point lives one level up from Feed.
+  const [vouchGateOpen, setVouchGateOpen] = useState(false);
+  // Bumped whenever the vouch gate dialog closes, so GuestBanner (which fetches
+  // its own status on mount and has no other way to learn a request was just
+  // submitted) remounts with a fresh fetch instead of showing a stale prompt.
+  const [guestBannerKey, setGuestBannerKey] = useState(0);
+
+  function openVouchGate() {
+    setVouchGateOpen(true);
+  }
+  function closeVouchGate() {
+    setVouchGateOpen(false);
+    setGuestBannerKey((k) => k + 1);
+  }
 
   return (
     <div className="fixed inset-0 flex">
-      <Sidebar profile={profile} onOpenFriends={() => setFriendsDrawerOpen(true)} unreadNotificationCount={unreadNotificationCount} />
+      <Sidebar
+        profile={profile}
+        onOpenFriends={() => setFriendsDrawerOpen(true)}
+        onSayHello={openVouchGate}
+        unreadNotificationCount={unreadNotificationCount}
+      />
 
       <Feed
         initialPosts={posts}
@@ -42,6 +63,10 @@ export function AppShell({
         stories={stories}
         onOpenFriends={() => setFriendsDrawerOpen(true)}
         unreadNotificationCount={unreadNotificationCount}
+        vouchGateOpen={vouchGateOpen}
+        onOpenVouchGate={openVouchGate}
+        onCloseVouchGate={closeVouchGate}
+        guestBannerKey={guestBannerKey}
       />
 
       {profile && (

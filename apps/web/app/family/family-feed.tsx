@@ -74,7 +74,7 @@ export function FamilyFeed({
 
         <ul className="min-h-0 flex-1 snap-y snap-mandatory overflow-y-auto">
           {posts.map((post) => (
-            <li key={post.id} className="flex h-full w-full snap-start justify-center p-3 sm:p-8">
+            <li key={post.id} className="flex h-full w-full snap-start justify-center p-3 sm:p-8 [scroll-snap-stop:always]">
               <div className="w-full max-w-2xl">
                 <PostCard
                   post={post}

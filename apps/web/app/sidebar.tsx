@@ -44,6 +44,14 @@ function UserIcon() {
   );
 }
 
+function HeartIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M12 20.5C6 16 3 12.5 3 8.5 3 5.7 5.2 4 7.5 4 9.2 4 10.7 5 12 6.5 13.3 5 14.8 4 16.5 4 18.8 4 21 5.7 21 8.5c0 4-3 7.5-9 12Z" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 function FamilyIcon() {
   return (
     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
@@ -76,10 +84,12 @@ function LogOutIcon() {
 export function Sidebar({
   profile,
   onOpenFriends,
+  onSayHello,
   unreadNotificationCount,
 }: {
   profile: Profile | null;
   onOpenFriends: () => void;
+  onSayHello: () => void;
   unreadNotificationCount: number;
 }) {
   const pathname = usePathname();
@@ -110,6 +120,12 @@ export function Sidebar({
 
       {profile && (
         <>
+          {profile.status === "pending" && (
+            <button type="button" onClick={onSayHello} className={itemClass(false)}>
+              <HeartIcon />
+              Say hello
+            </button>
+          )}
           <button type="button" onClick={onOpenFriends} className={`${itemClass(false)} lg:hidden`}>
             <FriendsIcon />
             Friends
