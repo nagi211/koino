@@ -101,7 +101,7 @@ export function NotificationBell({
   return (
     <div className="relative shrink-0">
       <button type="button" onClick={handleToggle} aria-label="Notifications" className={`relative ${buttonClass}`} style={buttonStyle}>
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" className="block">
           <path d="M6 10a6 6 0 1 1 12 0c0 4 1.5 5.5 1.5 5.5h-15S6 14 6 10Z" strokeLinecap="round" strokeLinejoin="round" />
           <path d="M10 18.5a2 2 0 0 0 4 0" strokeLinecap="round" />
         </svg>
