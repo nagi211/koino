@@ -371,6 +371,27 @@ export function ProfileScreen({
         </span>
 
         <div className="flex items-center gap-2 justify-self-end">
+          {isSelf && viewer?.status === "pending" && !editingLayout && (
+            <button
+              type="button"
+              onClick={() => setVouchGateOpen(true)}
+              aria-label="Say hello"
+              className={`flex h-9 w-9 items-center justify-center rounded-full border hover:opacity-80 ${navbarIcon ? "" : "border-card-border text-muted"}`}
+              style={navbarIcon ? { borderColor: navbarIcon, color: navbarIcon } : undefined}
+            >
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M8 15V5.5a1.3 1.3 0 0 1 2.6 0V13" strokeLinecap="round" />
+                <path d="M10.6 13V4a1.3 1.3 0 0 1 2.6 0v9.5" strokeLinecap="round" />
+                <path d="M13.2 13.5V6a1.3 1.3 0 0 1 2.6 0v9" strokeLinecap="round" />
+                <path
+                  d="M15.8 15V9a1.3 1.3 0 0 1 2.6 0v6c0 2.8-1.8 5-4.5 5H10c-1.8 0-3-.6-4-1.8l-2.3-2.9a1.15 1.15 0 0 1 1.8-1.43L7 15"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path d="M20.2 5.5c.7.8 1.1 1.7 1.1 2.8s-.4 2-1.1 2.8" strokeLinecap="round" />
+              </svg>
+            </button>
+          )}
           {viewer && !editingLayout && (
             <NotificationBell profile={viewer} initialUnreadCount={unreadNotificationCount} bordered iconColor={navbarIcon} />
           )}

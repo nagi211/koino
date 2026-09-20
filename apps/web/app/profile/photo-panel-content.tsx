@@ -15,15 +15,17 @@ import { AddFamilyButton } from "./add-family-button";
 import { AddFriendButton } from "./add-friend-button";
 import { ProfileLikeButton } from "./profile-like-button";
 import { ProfileViewersButton } from "./profile-viewers-button";
-import { VouchRequestPanel } from "./vouch-request-panel";
 import { FONT_STACKS } from "./theme";
 
 // "active" has no entry: the status badge (BadgeRow, below) already says "Active
 // member" — this sentence would just repeat it. "pending"/"suspended" keep their
 // text since it carries context the badge alone doesn't (what to do next, or why
-// posting is blocked), not just a duplicate label.
+// posting is blocked), not just a duplicate label. The "Say hello" flow itself
+// no longer lives inline here — it was crowding the profile page and getting in
+// the way of editing; the wave icon (sidebar / mobile header) is the permanent
+// entry point for it now, everywhere in the app including this page.
 const STATUS_COPY: Record<string, string> = {
-  pending: "You're new here. Say hello below to request to talk with a community leader.",
+  pending: "You're new here. Tap the wave icon above to say hello and connect with a leader.",
   suspended: "Your account has been suspended.",
 };
 
@@ -284,7 +286,6 @@ function IdentityDetails({
       )}
       <p className="text-xs opacity-60">Member since {new Date(target.created_at).toLocaleDateString()}</p>
       {isSelf && STATUS_COPY[target.status] && <p className="text-xs opacity-60">{STATUS_COPY[target.status]}</p>}
-      {isSelf && target.status === "pending" && <VouchRequestPanel guestId={target.id} />}
       <StatsLine profileId={target.id} isSelf={isSelf} likeCount={likeCount} viewerCount={viewerCount} totalViewCount={totalViewCount} />
     </>
   );

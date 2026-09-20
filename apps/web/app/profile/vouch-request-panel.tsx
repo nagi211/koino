@@ -17,9 +17,10 @@ const STARTERS = [
 
 /**
  * Guest-only "waiting room": reach out to start a conversation with a leader,
- * then wait / chat / see the outcome. Rendered under the pending-account status
- * line on the guest's own profile (see STATUS_COPY.pending in photo-panel-content.tsx)
- * and embedded directly in the feed's onboarding banner and the vouch gate modal.
+ * then wait / chat / see the outcome. Only embedded inside VouchGateModal now —
+ * it used to also sit inline in the feed's onboarding banner and directly on a
+ * guest's own profile, both replaced by compact entry points (GuestBanner, the
+ * wave icon) that open this same dialog instead of taking up permanent space.
  */
 export function VouchRequestPanel({ guestId }: { guestId: string }) {
   const [request, setRequest] = useState<VouchRequest | null | undefined>(undefined);
