@@ -89,10 +89,19 @@ type PositionedNode = { id: string; x: number; y: number; generation: number };
  * A real generational layout, not a hop-distance radial map: every relationship
  * carries an implied generation offset (GENERATION_DELTA), propagated from the
  * viewer across the whole reachable graph, so ancestors land above and
- * descendants below regardless of how many hops away they are. Left-right
- * placement is a separate, purely structural pass — a subtree-size-weighted
- * tidy-tree slice down the BFS closeness tree — so family units cluster
- * together instead of every row being independently centered.
+ * descendants below regardless of how many hops away they are.
+ *
+ * Left-right placement is a second, independent pass over a *different* tree:
+ * every node's "slice parent" is one of its generation+1 neighbors (an actual
+ * ancestor), never a peer or a descendant — earlier attempts that hung every
+ * direct connection off the viewer as an undifferentiated "child" pulled the
+ * viewer's own x off-center (it sat at the midpoint of its parents *and*
+ * siblings *and* children all at once) and overlapped adjacent cards. A same-
+ * generation node with no ancestor of its own (e.g. a sibling with no stored
+ * link to the shared parent) inherits its neighbor's resolved slice-parent
+ * instead, so siblings still cluster together. What's left after that
+ * (genuine root ancestors) anchors a subtree-size-weighted tidy-tree slice,
+ * same idea as before, just over the corrected tree.
  */
 function layoutTree(viewerId: string, edges: FamilyTreeEdge[]) {
   const generation = new Map<string, number>([[viewerId, 0]]);
@@ -104,7 +113,6 @@ function layoutTree(viewerId: string, edges: FamilyTreeEdge[]) {
     neighbors.get(edge.person_b)!.push({ id: edge.person_a, edge });
   }
 
-  const layoutParent = new Map<string, string | null>([[viewerId, null]]);
   const visited = new Set([viewerId]);
   const queue = [viewerId];
   while (queue.length > 0) {
@@ -112,7 +120,6 @@ function layoutTree(viewerId: string, edges: FamilyTreeEdge[]) {
     for (const { id: next, edge } of neighbors.get(current) ?? []) {
       if (visited.has(next)) continue;
       visited.add(next);
-      layoutParent.set(next, current);
       const delta = GENERATION_DELTA[edge.relationship];
       const currentGen = generation.get(current)!;
       generation.set(next, edge.person_a === current ? currentGen + delta : currentGen - delta);
@@ -120,8 +127,32 @@ function layoutTree(viewerId: string, edges: FamilyTreeEdge[]) {
     }
   }
 
+  const sliceParent = new Map<string, string | null>();
+  for (const id of visited) {
+    const up = (neighbors.get(id) ?? []).find((n) => generation.get(n.id) === generation.get(id)! + 1);
+    if (up) sliceParent.set(id, up.id);
+  }
+  let resolving = true;
+  while (resolving) {
+    resolving = false;
+    for (const id of visited) {
+      if (sliceParent.has(id)) continue;
+      const peer = (neighbors.get(id) ?? []).find(
+        (n) => generation.get(n.id) === generation.get(id) && sliceParent.get(n.id) != null
+      );
+      if (peer) {
+        sliceParent.set(id, sliceParent.get(peer.id)!);
+        resolving = true;
+      }
+    }
+  }
+  for (const id of visited) {
+    if (!sliceParent.has(id)) sliceParent.set(id, null);
+  }
+
   const children = new Map<string, string[]>();
-  for (const [id, p] of layoutParent) {
+  for (const id of visited) {
+    const p = sliceParent.get(id)!;
     if (p === null) continue;
     if (!children.has(p)) children.set(p, []);
     children.get(p)!.push(id);
@@ -150,8 +181,14 @@ function layoutTree(viewerId: string, edges: FamilyTreeEdge[]) {
       cursor += width;
     }
   }
-  const totalWidth = leafCount(viewerId);
-  assignSlot(viewerId, 0, totalWidth);
+  const roots = Array.from(visited).filter((id) => sliceParent.get(id) === null);
+  const totalWidth = roots.reduce((sum, root) => sum + leafCount(root), 0);
+  let rootCursor = 0;
+  for (const root of roots) {
+    const width = leafCount(root);
+    assignSlot(root, rootCursor, rootCursor + width);
+    rootCursor += width;
+  }
 
   const minGen = Math.min(...Array.from(visited).map((id) => generation.get(id)!));
   const maxGen = Math.max(...Array.from(visited).map((id) => generation.get(id)!));
