@@ -31,6 +31,12 @@ function targetHref(notification: NotificationWithActor): string {
     return notification.conversation_id ? `/messages?c=${notification.conversation_id}` : "/messages";
   }
   if (notification.type === "vouch_approved" || notification.type === "vouch_declined" || notification.type === "promoted_to_leader") return "/profile";
+  // Unlike friends (no standalone page — the FriendsPanel already sits
+  // permanently in the home sidebar/drawer), family has its own /family page,
+  // so a family notification should land there instead of the actor's
+  // profile. ?requests=1 opens the mobile drawer straight to the panel that
+  // has the pending/just-accepted request (see family-feed.tsx).
+  if (notification.type === "family_request" || notification.type === "family_accept") return "/family?requests=1";
   return notification.actor_username ? `/profile/${notification.actor_username}` : "/profile";
 }
 

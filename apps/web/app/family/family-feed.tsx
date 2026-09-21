@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import type { FamilyConnectionWithProfile, FriendshipStatus, PostWithAuthor, Profile } from "@koino/core";
 import { NotificationBell } from "../notification-bell";
 import { PostActions } from "../post-actions";
@@ -36,7 +37,12 @@ export function FamilyFeed({
   const [composerOpen, setComposerOpen] = useState(false);
   const [reportTarget, setReportTarget] = useState<PostWithAuthor | null>(null);
   const [vouchGateOpen, setVouchGateOpen] = useState(false);
-  const [familyDrawerOpen, setFamilyDrawerOpen] = useState(false);
+  const searchParams = useSearchParams();
+  // On mobile the family panel lives behind a drawer, not always on screen like
+  // it is on desktop (lg:block aside below) — a notification linking here (e.g.
+  // "wants to connect as family") should still land the viewer directly on the
+  // panel with the request, not just the post feed.
+  const [familyDrawerOpen, setFamilyDrawerOpen] = useState(() => searchParams.get("requests") !== null);
 
   // Commenting/reporting still require an active account, same as the public
   // feed — only *posting* and *liking* within family are open to any
