@@ -257,53 +257,81 @@ export function FamilyTreeView({ viewer, edges, profiles }: { viewer: Profile; e
                 );
               })}
 
-            <svg width={width} height={height} className="absolute left-0 top-0 overflow-visible" style={{ pointerEvents: "none" }}>
-              {edges.map((edge) => {
+            {(() => {
+              // Card anchor points, in this container's coordinate space. Same-
+              // generation edges (siblings/spouse/cousin) connect side-to-side at
+              // the card's vertical center; cross-generation edges connect
+              // bottom-of-ancestor to top-of-descendant via an orthogonal elbow.
+              const cardTop = (n: PositionedNode) => n.y + offsetY;
+              const cardBottom = (n: PositionedNode) => n.y + offsetY + AVATAR_SIZE + 34;
+              const cardCenterY = (n: PositionedNode) => n.y + offsetY + (AVATAR_SIZE + 34) / 2;
+              const cardCenterX = (n: PositionedNode) => n.x + offsetX + CARD_WIDTH / 2;
+              const cardLeft = (n: PositionedNode) => n.x + offsetX;
+              const cardRight = (n: PositionedNode) => n.x + offsetX + CARD_WIDTH;
+
+              function geometry(edge: FamilyTreeEdge) {
                 const a = nodeById.get(edge.person_a);
                 const b = nodeById.get(edge.person_b);
                 if (!a || !b) return null;
-                const higher = a.generation >= b.generation ? a : b;
-                const lower = a.generation >= b.generation ? b : a;
-                const hx = higher.x + offsetX + CARD_WIDTH / 2;
-                const hy = higher.y + offsetY + AVATAR_SIZE + 34;
-                const lx = lower.x + offsetX + CARD_WIDTH / 2;
-                const ly = lower.y + offsetY;
+                if (a.generation === b.generation) {
+                  const [leftNode, rightNode] = cardCenterX(a) <= cardCenterX(b) ? [a, b] : [b, a];
+                  const y = cardCenterY(leftNode);
+                  return {
+                    path: `M ${cardRight(leftNode)} ${y} L ${cardLeft(rightNode)} ${y}`,
+                    labelX: (cardRight(leftNode) + cardLeft(rightNode)) / 2,
+                    labelY: y,
+                  };
+                }
+                const higher = a.generation > b.generation ? a : b;
+                const lower = a.generation > b.generation ? b : a;
+                const hx = cardCenterX(higher);
+                const hy = cardBottom(higher);
+                const lx = cardCenterX(lower);
+                const ly = cardTop(lower);
                 const midY = (hy + ly) / 2;
+                return {
+                  path: `M ${hx} ${hy} L ${hx} ${midY} L ${lx} ${midY} L ${lx} ${ly}`,
+                  labelX: (hx + lx) / 2,
+                  labelY: midY,
+                };
+              }
 
-                const path =
-                  higher.generation === lower.generation
-                    ? `M ${hx} ${hy - 17} L ${lx} ${ly - 17}`
-                    : `M ${hx} ${hy} L ${hx} ${midY} L ${lx} ${midY} L ${lx} ${ly}`;
-
-                return (
-                  <g key={edge.connection_id}>
-                    <path d={path} className="stroke-card-border" strokeWidth={1.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
-                  </g>
-                );
-              })}
-            </svg>
-
-            {edges.map((edge) => {
-              const a = nodeById.get(edge.person_a);
-              const b = nodeById.get(edge.person_b);
-              if (!a || !b) return null;
-              const higher = a.generation >= b.generation ? a : b;
-              const lower = a.generation >= b.generation ? b : a;
-              const sameRow = higher.generation === lower.generation;
-              const midX = (higher.x + lower.x) / 2 + offsetX + CARD_WIDTH / 2;
-              const midY = sameRow
-                ? higher.y + offsetY + AVATAR_SIZE + 17
-                : (higher.y + offsetY + AVATAR_SIZE + 34 + lower.y + offsetY) / 2;
               return (
-                <span
-                  key={edge.connection_id}
-                  className="absolute -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full border border-card-border bg-background px-2 py-0.5 text-[9px] font-medium uppercase tracking-wide text-muted"
-                  style={{ left: midX, top: midY }}
-                >
-                  {RELATIONSHIP_LABEL[edge.relationship]}
-                </span>
+                <>
+                  <svg width={width} height={height} className="absolute left-0 top-0 overflow-visible" style={{ pointerEvents: "none" }}>
+                    {edges.map((edge) => {
+                      const g = geometry(edge);
+                      if (!g) return null;
+                      return (
+                        <path
+                          key={edge.connection_id}
+                          d={g.path}
+                          className="stroke-card-border"
+                          strokeWidth={1.5}
+                          fill="none"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      );
+                    })}
+                  </svg>
+
+                  {edges.map((edge) => {
+                    const g = geometry(edge);
+                    if (!g) return null;
+                    return (
+                      <span
+                        key={edge.connection_id}
+                        className="absolute -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full border border-card-border bg-background px-2 py-0.5 text-[9px] font-medium uppercase tracking-wide text-muted"
+                        style={{ left: g.labelX, top: g.labelY }}
+                      >
+                        {RELATIONSHIP_LABEL[edge.relationship]}
+                      </span>
+                    );
+                  })}
+                </>
               );
-            })}
+            })()}
 
             {nodes.map((node) => {
               const person = node.id === viewer.id ? viewer : profileById.get(node.id);
