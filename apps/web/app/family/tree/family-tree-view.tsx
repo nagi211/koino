@@ -78,10 +78,14 @@ function generationLabel(gen: number): string {
   return `${"Great-".repeat(-gen - 2)}grandchildren`;
 }
 
-const COLUMN_WIDTH = 152;
-const ROW_HEIGHT = 190;
-const CARD_WIDTH = 116;
+const COLUMN_WIDTH = 184;
+const ROW_HEIGHT = 200;
+const CARD_WIDTH = 148;
 const AVATAR_SIZE = 60;
+// Reserved header strip at the top of every row for its generation label +
+// rule, kept strictly above where cards start — the label used to share the
+// same y as the cards' avatar-center and got cut off behind them.
+const LABEL_HEIGHT = 40;
 
 type PositionedNode = { id: string; x: number; y: number; generation: number };
 
@@ -219,7 +223,10 @@ export function FamilyTreeView({ viewer, edges, profiles }: { viewer: Profile; e
   const width = maxX - minX + COLUMN_WIDTH + 80;
   const height = (maxGen - minGen + 1) * ROW_HEIGHT + 40;
   const offsetX = -minX + 40;
+  // Row labels sit at offsetY (the row's un-shifted top); cards and edges sit
+  // LABEL_HEIGHT further down, inside the same row slot but below its header.
   const offsetY = 20;
+  const cardOffsetY = offsetY + LABEL_HEIGHT;
 
   return (
     <div className="fixed inset-0 flex flex-col">
@@ -240,13 +247,14 @@ export function FamilyTreeView({ viewer, edges, profiles }: { viewer: Profile; e
           </div>
         ) : (
           <div className="relative mx-auto" style={{ width, height }}>
-            {/* Generation rows: a thin rule + serif label on the left of each tier —
-                the labels carry real structural meaning (which generation this is),
-                not decoration, so they're worth the vertical space. */}
+            {/* Generation rows: a thin rule + serif label in a dedicated strip above
+                each tier — the labels carry real structural meaning (which
+                generation this is), not decoration, so they're worth the space.
+                Kept strictly above cardOffsetY so a card never sits on top of it. */}
             {Array.from(rows.keys())
               .sort((a, b) => b - a)
               .map((gen) => {
-                const y = (maxGen - gen) * ROW_HEIGHT + offsetY + AVATAR_SIZE / 2;
+                const y = (maxGen - gen) * ROW_HEIGHT + offsetY + LABEL_HEIGHT / 2;
                 return (
                   <div key={gen} className="absolute left-0 right-0 flex items-center gap-3" style={{ top: y }}>
                     <span className="shrink-0 whitespace-nowrap font-serif text-xs uppercase tracking-[0.15em] text-muted">
@@ -262,9 +270,9 @@ export function FamilyTreeView({ viewer, edges, profiles }: { viewer: Profile; e
               // generation edges (siblings/spouse/cousin) connect side-to-side at
               // the card's vertical center; cross-generation edges connect
               // bottom-of-ancestor to top-of-descendant via an orthogonal elbow.
-              const cardTop = (n: PositionedNode) => n.y + offsetY;
-              const cardBottom = (n: PositionedNode) => n.y + offsetY + AVATAR_SIZE + 34;
-              const cardCenterY = (n: PositionedNode) => n.y + offsetY + (AVATAR_SIZE + 34) / 2;
+              const cardTop = (n: PositionedNode) => n.y + cardOffsetY;
+              const cardBottom = (n: PositionedNode) => n.y + cardOffsetY + AVATAR_SIZE + 34;
+              const cardCenterY = (n: PositionedNode) => n.y + cardOffsetY + (AVATAR_SIZE + 34) / 2;
               const cardCenterX = (n: PositionedNode) => n.x + offsetX + CARD_WIDTH / 2;
               const cardLeft = (n: PositionedNode) => n.x + offsetX;
               const cardRight = (n: PositionedNode) => n.x + offsetX + CARD_WIDTH;
@@ -357,7 +365,7 @@ export function FamilyTreeView({ viewer, edges, profiles }: { viewer: Profile; e
                   className={`absolute flex flex-col items-center gap-1.5 rounded-2xl border px-2.5 py-3 text-center shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
                     isViewer ? "border-olive-dark bg-olive/10" : "border-card-border bg-card"
                   }`}
-                  style={{ left: node.x + offsetX, top: node.y + offsetY, width: CARD_WIDTH }}
+                  style={{ left: node.x + offsetX, top: node.y + cardOffsetY, width: CARD_WIDTH }}
                 >
                   <Avatar
                     url={person.avatar_url}
