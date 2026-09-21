@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database, FamilyConnectionStatus, FamilyConnectionWithProfile, FamilyRelationship, Profile } from "../types";
+import type { Database, FamilyConnectionStatus, FamilyConnectionWithProfile, FamilyRelationship, FamilyTreeEdge, Profile } from "../types";
 
 type FamilyConnectionRow = {
   id: string;
@@ -92,4 +92,17 @@ export async function getPendingFamilyRequests(
     relationship: row.relationship,
     profile: row.requester,
   }));
+}
+
+/**
+ * The extended, multi-hop family tree — every accepted connection reachable
+ * from the caller within `maxDepth` hops, not just their own direct
+ * connections. See get_family_tree (0034_family_tree.sql): it does the
+ * traversal server-side under SECURITY DEFINER, so this is the only path by
+ * which a connection becomes visible beyond the two people in it.
+ */
+export async function getFamilyTree(client: SupabaseClient<Database>, maxDepth = 4): Promise<FamilyTreeEdge[]> {
+  const { data, error } = await client.rpc("get_family_tree", { max_depth: maxDepth });
+  if (error) throw error;
+  return data as FamilyTreeEdge[];
 }

@@ -41,6 +41,14 @@ export async function getProfileByUsername(client: SupabaseClient<Database>, use
   return data;
 }
 
+/** Batch profile lookup — profiles are publicly readable, so this works for any id, not just the caller's own connections. */
+export async function getProfilesByIds(client: SupabaseClient<Database>, ids: string[]): Promise<Profile[]> {
+  if (ids.length === 0) return [];
+  const { data, error } = await client.from("profiles").select("*").in("id", ids);
+  if (error) throw error;
+  return data;
+}
+
 /** RLS allows updating your own row as long as status/role stay unchanged (enforced there, not here). */
 export async function updateProfile(
   client: SupabaseClient<Database>,

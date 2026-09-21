@@ -271,6 +271,16 @@ export type FamilyConnection = {
 
 export type FamilyConnectionWithProfile = { connection_id: string; relationship: FamilyRelationship; profile: Profile };
 
+/** One edge from get_family_tree — person_a/person_b are requester/addressee (relationship reads "person_b is person_a's {relationship}"). */
+export type FamilyTreeEdge = {
+  connection_id: string;
+  person_a: string;
+  person_a_depth: number;
+  person_b: string;
+  person_b_depth: number;
+  relationship: FamilyRelationship;
+};
+
 export type Story = {
   id: string;
   author_id: string;
@@ -404,6 +414,7 @@ export type Database = {
         Args: { p_report_id: string };
         Returns: { sender_id: string; username: string; avatar_url: string | null }[];
       };
+      get_family_tree: { Args: { max_depth: number }; Returns: FamilyTreeEdge[] };
     };
   };
 };

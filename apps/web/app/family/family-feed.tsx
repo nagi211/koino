@@ -67,6 +67,9 @@ export function FamilyFeed({
             <h1 className="text-lg font-bold text-foreground">Family</h1>
           </div>
           <div className="flex items-center gap-3">
+            <Link href="/family/tree" className="text-sm text-muted hover:text-foreground">
+              Family tree
+            </Link>
             <button
               type="button"
               onClick={() => setFamilyDrawerOpen(true)}
