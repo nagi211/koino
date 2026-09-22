@@ -46,6 +46,12 @@ const AVATAR_SIZE = 60;
 // rule, kept strictly above where cards start — the label used to share the
 // same y as the cards' avatar-center and got cut off behind them.
 const LABEL_HEIGHT = 40;
+// The row label's own column width (w-24 = 6rem = 96px) + the flex gap-3
+// (0.75rem = 12px) before its divider rule starts — cards and connector
+// lines need to stay clear of this whole strip, not just x=0, or a card near
+// the tree's left edge (and the elbow line into it) visually collides with
+// the label text sitting at the same height one row up.
+const LABEL_COLUMN_WIDTH = 96 + 12;
 
 type PositionedNode = { id: string; x: number; y: number; generation: number };
 
@@ -180,9 +186,14 @@ export function FamilyTreeView({ viewer, edges, profiles }: { viewer: Profile; e
 
   const minX = Math.min(...nodes.map((n) => n.x));
   const maxX = Math.max(...nodes.map((n) => n.x));
-  const width = maxX - minX + COLUMN_WIDTH + 80;
+  // Left margin has to clear the row label's own column (see
+  // LABEL_COLUMN_WIDTH), not just leave a little breathing room — otherwise a
+  // card (or the connector line running into it) sitting near the tree's own
+  // left edge ends up at the same x as a row label one tier up.
+  const leftMargin = LABEL_COLUMN_WIDTH + 40;
+  const width = maxX - minX + COLUMN_WIDTH + 80 + (leftMargin - 40);
   const height = (maxGen - minGen + 1) * ROW_HEIGHT + 40;
-  const offsetX = -minX + 40;
+  const offsetX = -minX + leftMargin;
   // Row labels sit at offsetY (the row's un-shifted top); cards and edges sit
   // LABEL_HEIGHT further down, inside the same row slot but below its header.
   const offsetY = 20;
