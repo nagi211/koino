@@ -1,10 +1,19 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import type { Profile } from "@koino/core";
 import { Avatar } from "./avatar";
 import { resolvePhotoSettings } from "./profile/photo-panel-content";
+import { useMounted } from "./use-mounted";
 
-function getGreeting() {
+// getHours() reads the runtime's local timezone — a server render (Vercel,
+// often UTC) and a visitor's browser (their own timezone) will almost always
+// disagree on what "hour" it is, so this can't run during the render that has
+// to match SSR output. "Welcome," is the stable stand-in until mount, then
+// this swaps to the real time-of-day greeting.
+function getGreeting(mounted: boolean) {
+  if (!mounted) return "Welcome,";
   const hour = new Date().getHours();
   if (hour < 12) return "Good morning,";
   if (hour < 18) return "Good afternoon,";
@@ -12,6 +21,7 @@ function getGreeting() {
 }
 
 export function ProfileCard({ profile }: { profile: Profile }) {
+  const mounted = useMounted();
   // Mirrors the actual info panel: only show a cover bar here if the owner picked
   // the "cover" layout for their info panel — otherwise this card would show a
   // banner nothing on the real profile page has, which looked out of place.
@@ -29,7 +39,7 @@ export function ProfileCard({ profile }: { profile: Profile }) {
         <div className={`rounded-full border-4 border-card ${hasCover ? "-mt-8" : "mt-4"}`}>
           <Avatar url={profile.avatar_url} username={profile.username} size={64} />
         </div>
-        <p className="mt-2 text-xs text-muted">{getGreeting()}</p>
+        <p className="mt-2 text-xs text-muted">{getGreeting(mounted)}</p>
         <p className="text-sm font-semibold text-foreground">{profile.display_name || `@${profile.username}`}</p>
         <p className="text-xs text-muted">{profile.bio || (profile.status === "pending" ? "New here — say hello!" : "Member of Koino")}</p>
         <Link
