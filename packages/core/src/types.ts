@@ -269,7 +269,15 @@ export type FamilyConnection = {
   created_at: string;
 };
 
-export type FamilyConnectionWithProfile = { connection_id: string; relationship: FamilyRelationship; profile: Profile };
+// relationshipLabel is pre-oriented for whichever profile fetched this row (see
+// familyRelationshipLabelFor) — relationship itself stays the raw stored value,
+// which only reads correctly from the original requester's side.
+export type FamilyConnectionWithProfile = {
+  connection_id: string;
+  relationship: FamilyRelationship;
+  relationshipLabel: string;
+  profile: Profile;
+};
 
 /** One edge from get_family_tree — person_a/person_b are requester/addressee (relationship reads "person_b is person_a's {relationship}"). */
 export type FamilyTreeEdge = {

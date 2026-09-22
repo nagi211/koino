@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import type { FriendshipStatus, PostWithAuthor, Profile, StoryWithAuthor } from "@koino/core";
 import { AccountMenu } from "./account-menu";
 import { AuthModal } from "./auth-modal";
@@ -121,6 +122,17 @@ export function Feed({
                 <path d="M15.5 15c2.5.3 4.5 2.2 4.5 5" strokeLinecap="round" />
               </svg>
             </button>
+            {/* Family: sidebar covers this from md: up too, same as Friends — the
+                sidebar's own nav is entirely hidden below md, so mobile had no way
+                in at all until now. */}
+            <Link href="/family" aria-label="Family" className="text-muted hover:text-foreground md:hidden">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="8" cy="6" r="2.5" />
+                <circle cx="16" cy="6" r="2.5" />
+                <path d="M3 20c0-3.5 2.2-6 5-6s5 2.5 5 6" strokeLinecap="round" />
+                <path d="M11 20c0-3.5 2.2-6 5-6s5 2.5 5 6" strokeLinecap="round" />
+              </svg>
+            </Link>
             <div className="md:hidden">
               <NotificationBell profile={profile} initialUnreadCount={unreadNotificationCount} />
             </div>

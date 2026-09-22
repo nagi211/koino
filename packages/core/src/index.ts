@@ -1,6 +1,7 @@
 export * from "./types";
 export * from "./schemas";
 export * from "./color-contrast";
+export * from "./family-relationship-label";
 export * from "./queries/auth";
 export * from "./queries/vouch";
 export * from "./queries/messages";

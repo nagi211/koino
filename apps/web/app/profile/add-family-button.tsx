@@ -1,24 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { sendFamilyRequest } from "@koino/core";
+import { FAMILY_RELATIONSHIP_OPTIONS, sendFamilyRequest } from "@koino/core";
 import type { FamilyConnectionStatus, FamilyRelationship, Profile } from "@koino/core";
 import { createClient } from "@/lib/supabase/client";
-
-const RELATIONSHIP_OPTIONS: { value: FamilyRelationship; label: string }[] = [
-  { value: "mother", label: "Mother" },
-  { value: "father", label: "Father" },
-  { value: "sister", label: "Sister" },
-  { value: "brother", label: "Brother" },
-  { value: "grandmother", label: "Grandmother" },
-  { value: "grandfather", label: "Grandfather" },
-  { value: "aunt", label: "Aunt" },
-  { value: "uncle", label: "Uncle" },
-  { value: "cousin", label: "Cousin" },
-  { value: "spouse", label: "Spouse" },
-  { value: "child", label: "Child" },
-  { value: "other", label: "Other" },
-];
 
 export function AddFamilyButton({
   viewer,
@@ -67,7 +52,7 @@ export function AddFamilyButton({
           onChange={(e) => setRelationship(e.target.value as FamilyRelationship)}
           className="rounded-xl border border-card-border bg-input px-2 py-1.5 text-sm text-foreground outline-none focus:border-olive-dark"
         >
-          {RELATIONSHIP_OPTIONS.map((opt) => (
+          {FAMILY_RELATIONSHIP_OPTIONS.map((opt) => (
             <option key={opt.value} value={opt.value}>
               {opt.label}
             </option>

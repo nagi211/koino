@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import {
   acceptFamilyRequest,
+  FAMILY_RELATIONSHIP_OPTIONS,
   getMyFamilyStatuses,
   removeFamilyConnection,
   searchProfiles,
@@ -13,26 +14,6 @@ import type { FamilyConnectionStatus, FamilyConnectionWithProfile, FamilyRelatio
 import { createClient } from "@/lib/supabase/client";
 import { Avatar } from "../avatar";
 import { ProfileCard } from "../profile-card";
-
-const RELATIONSHIP_OPTIONS: { value: FamilyRelationship; label: string }[] = [
-  { value: "mother", label: "Mother" },
-  { value: "father", label: "Father" },
-  { value: "sister", label: "Sister" },
-  { value: "brother", label: "Brother" },
-  { value: "grandmother", label: "Grandmother" },
-  { value: "grandfather", label: "Grandfather" },
-  { value: "aunt", label: "Aunt" },
-  { value: "uncle", label: "Uncle" },
-  { value: "cousin", label: "Cousin" },
-  { value: "spouse", label: "Spouse" },
-  { value: "child", label: "Child" },
-  { value: "other", label: "Other" },
-];
-
-const RELATIONSHIP_LABEL = Object.fromEntries(RELATIONSHIP_OPTIONS.map((opt) => [opt.value, opt.label])) as Record<
-  FamilyRelationship,
-  string
->;
 
 export function FamilyPanel({
   profile,
@@ -156,7 +137,7 @@ export function FamilyPanel({
                         onChange={(e) => setRelationship(e.target.value as FamilyRelationship)}
                         className="rounded-xl border border-card-border bg-input px-2 py-1 text-xs text-foreground outline-none focus:border-olive-dark"
                       >
-                        {RELATIONSHIP_OPTIONS.map((opt) => (
+                        {FAMILY_RELATIONSHIP_OPTIONS.map((opt) => (
                           <option key={opt.value} value={opt.value}>
                             {opt.label}
                           </option>
@@ -187,7 +168,7 @@ export function FamilyPanel({
                 <Link href={`/profile/${req.profile.username}`} className="flex min-w-0 items-center gap-2 hover:underline">
                   <Avatar url={req.profile.avatar_url} username={req.profile.username} size={28} />
                   <span className="truncate text-sm text-foreground">
-                    @{req.profile.username} <span className="text-muted">· {RELATIONSHIP_LABEL[req.relationship]}</span>
+                    @{req.profile.username} <span className="text-muted">· {req.relationshipLabel}</span>
                   </span>
                 </Link>
                 <div className="flex shrink-0 gap-1">
@@ -223,7 +204,7 @@ export function FamilyPanel({
                 <Link href={`/profile/${f.profile.username}`} className="flex min-w-0 items-center gap-2 hover:underline">
                   <Avatar url={f.profile.avatar_url} username={f.profile.username} size={28} />
                   <span className="truncate text-sm text-foreground">
-                    @{f.profile.username} <span className="text-muted">· {RELATIONSHIP_LABEL[f.relationship]}</span>
+                    @{f.profile.username} <span className="text-muted">· {f.relationshipLabel}</span>
                   </span>
                 </Link>
                 <button

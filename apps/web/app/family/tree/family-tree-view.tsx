@@ -1,23 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { FAMILY_RELATIONSHIP_LABEL, inverseFamilyRelationshipLabel } from "@koino/core";
 import type { FamilyRelationship, FamilyTreeEdge, Profile } from "@koino/core";
 import { Avatar } from "../../avatar";
-
-const RELATIONSHIP_LABEL: Record<FamilyRelationship, string> = {
-  mother: "Mother",
-  father: "Father",
-  sister: "Sister",
-  brother: "Brother",
-  grandmother: "Grandmother",
-  grandfather: "Grandfather",
-  aunt: "Aunt",
-  uncle: "Uncle",
-  cousin: "Cousin",
-  spouse: "Spouse",
-  child: "Child",
-  other: "Other",
-};
 
 // How many generations *up* the addressee sits relative to the requester
 // (relationship always reads "addressee is requester's {relationship}" — see
@@ -37,36 +23,6 @@ const GENERATION_DELTA: Record<FamilyRelationship, number> = {
   other: 0,
   child: -1,
 };
-
-// Display-only inversion for a direct edge where the viewer is the
-// *addressee* — the stored word describes the viewer ("you're my child"), so
-// this derives what the other person is *to the viewer* instead. Gendered
-// terms fall back to a neutral word when the other person's gender isn't set.
-function inverseLabel(relationship: FamilyRelationship, requester: Profile): string {
-  const gender = requester.gender;
-  switch (relationship) {
-    case "mother":
-    case "father":
-      return "Child";
-    case "grandmother":
-    case "grandfather":
-      return "Grandchild";
-    case "aunt":
-    case "uncle":
-      return gender === "male" ? "Nephew" : gender === "female" ? "Niece" : "Niece/Nephew";
-    case "child":
-      return gender === "male" ? "Father" : gender === "female" ? "Mother" : "Parent";
-    case "sister":
-    case "brother":
-      return gender === "male" ? "Brother" : gender === "female" ? "Sister" : "Sibling";
-    case "cousin":
-      return "Cousin";
-    case "spouse":
-      return "Spouse";
-    case "other":
-      return "Other";
-  }
-}
 
 function generationLabel(gen: number): string {
   if (gen === 0) return "Your generation";
@@ -333,7 +289,7 @@ export function FamilyTreeView({ viewer, edges, profiles }: { viewer: Profile; e
                         className="absolute -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full border border-card-border bg-background px-2 py-0.5 text-[9px] font-medium uppercase tracking-wide text-muted"
                         style={{ left: g.labelX, top: g.labelY }}
                       >
-                        {RELATIONSHIP_LABEL[edge.relationship]}
+                        {FAMILY_RELATIONSHIP_LABEL[edge.relationship]}
                       </span>
                     );
                   })}
@@ -352,10 +308,10 @@ export function FamilyTreeView({ viewer, edges, profiles }: { viewer: Profile; e
               const directEdge = edges.find((e) => e.person_a === viewer.id && e.person_b === node.id) ??
                 edges.find((e) => e.person_b === viewer.id && e.person_a === node.id);
               let tag: string | null = null;
-              if (directEdge && directEdge.person_a === viewer.id) tag = RELATIONSHIP_LABEL[directEdge.relationship];
+              if (directEdge && directEdge.person_a === viewer.id) tag = FAMILY_RELATIONSHIP_LABEL[directEdge.relationship];
               else if (directEdge && directEdge.person_b === viewer.id) {
                 const requester = profileById.get(directEdge.person_a) ?? viewer;
-                tag = inverseLabel(directEdge.relationship, requester);
+                tag = inverseFamilyRelationshipLabel(directEdge.relationship, requester);
               }
 
               return (

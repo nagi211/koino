@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { familyRelationshipLabelFor, inverseFamilyRelationshipLabel } from "../family-relationship-label";
 import type { Database, FamilyConnectionStatus, FamilyConnectionWithProfile, FamilyRelationship, FamilyTreeEdge, Profile } from "../types";
 
 type FamilyConnectionRow = {
@@ -69,11 +70,15 @@ export async function getFamily(client: SupabaseClient<Database>, profileId: str
 
   return (
     data as unknown as Array<{ id: string; requester_id: string; relationship: FamilyRelationship; requester: Profile; addressee: Profile }>
-  ).map((row) => ({
-    connection_id: row.id,
-    relationship: row.relationship,
-    profile: row.requester_id === profileId ? row.addressee : row.requester,
-  }));
+  ).map((row) => {
+    const viewerIsRequester = row.requester_id === profileId;
+    return {
+      connection_id: row.id,
+      relationship: row.relationship,
+      relationshipLabel: familyRelationshipLabelFor(row.relationship, viewerIsRequester, row.requester),
+      profile: viewerIsRequester ? row.addressee : row.requester,
+    };
+  });
 }
 
 export async function getPendingFamilyRequests(
@@ -87,9 +92,12 @@ export async function getPendingFamilyRequests(
     .eq("status", "pending");
   if (error) throw error;
 
+  // The query's own addressee_id filter guarantees profileId is always the
+  // addressee here, never the requester — so this always needs the inverse.
   return (data as unknown as Array<{ id: string; relationship: FamilyRelationship; requester: Profile }>).map((row) => ({
     connection_id: row.id,
     relationship: row.relationship,
+    relationshipLabel: inverseFamilyRelationshipLabel(row.relationship, row.requester),
     profile: row.requester,
   }));
 }
