@@ -39,13 +39,16 @@ function generationLabel(gen: number): string {
 // label ("Grandmother"/"Grandfather") centered on the connecting line
 // between them, without spilling onto either card.
 const COLUMN_WIDTH = 280;
-const ROW_HEIGHT = 200;
+const ROW_HEIGHT = 230;
 const CARD_WIDTH = 148;
 const AVATAR_SIZE = 60;
 // Reserved header strip at the top of every row for its generation label +
 // rule, kept strictly above where cards start — the label used to share the
-// same y as the cards' avatar-center and got cut off behind them.
-const LABEL_HEIGHT = 40;
+// same y as the cards' avatar-center and got cut off behind them. The rule
+// itself sits at the vertical middle of this strip, so its own clearance
+// down to the cards below is half of this value — kept generous (not just
+// "not literally touching") so the row doesn't read as cramped.
+const LABEL_HEIGHT = 64;
 // The row label's own column width (w-24 = 6rem = 96px) + the flex gap-3
 // (0.75rem = 12px) before its divider rule starts — cards and connector
 // lines need to stay clear of this whole strip, not just x=0, or a card near
