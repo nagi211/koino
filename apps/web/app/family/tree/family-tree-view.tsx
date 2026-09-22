@@ -243,7 +243,14 @@ export function FamilyTreeView({ viewer, edges, profiles }: { viewer: Profile; e
                   return {
                     path: `M ${cardRight(leftNode)} ${y} L ${cardLeft(rightNode)} ${y}`,
                     labelX: (cardRight(leftNode) + cardLeft(rightNode)) / 2,
-                    labelY: y,
+                    // The gap between adjacent cards (COLUMN_WIDTH - CARD_WIDTH) is
+                    // narrower than longer relationship words ("Grandmother"), so a
+                    // label centered in that gap spills onto the neighboring card.
+                    // The row's own header band above the cards is open space (same
+                    // spot the generation label's divider rule already uses), so
+                    // labels float up there instead — same "tag breaking a rule
+                    // line" visual the row label already establishes.
+                    labelY: cardTop(leftNode) - 16,
                   };
                 }
                 const higher = a.generation > b.generation ? a : b;
