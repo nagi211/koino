@@ -34,7 +34,11 @@ function generationLabel(gen: number): string {
   return `${"Great-".repeat(-gen - 2)}grandchildren`;
 }
 
-const COLUMN_WIDTH = 184;
+// Wide enough that the gap between two adjacent same-generation cards
+// (COLUMN_WIDTH - CARD_WIDTH) comfortably fits the longest relationship
+// label ("Grandmother"/"Grandfather") centered on the connecting line
+// between them, without spilling onto either card.
+const COLUMN_WIDTH = 280;
 const ROW_HEIGHT = 200;
 const CARD_WIDTH = 148;
 const AVATAR_SIZE = 60;
@@ -213,7 +217,7 @@ export function FamilyTreeView({ viewer, edges, profiles }: { viewer: Profile; e
                 const y = (maxGen - gen) * ROW_HEIGHT + offsetY + LABEL_HEIGHT / 2;
                 return (
                   <div key={gen} className="absolute left-0 right-0 flex items-center gap-3" style={{ top: y }}>
-                    <span className="shrink-0 whitespace-nowrap font-serif text-xs uppercase tracking-[0.15em] text-muted">
+                    <span className="w-24 shrink-0 font-serif text-xs uppercase leading-tight tracking-[0.15em] text-muted">
                       {generationLabel(gen)}
                     </span>
                     <span className="h-px flex-1 bg-card-border" />
@@ -243,14 +247,7 @@ export function FamilyTreeView({ viewer, edges, profiles }: { viewer: Profile; e
                   return {
                     path: `M ${cardRight(leftNode)} ${y} L ${cardLeft(rightNode)} ${y}`,
                     labelX: (cardRight(leftNode) + cardLeft(rightNode)) / 2,
-                    // The gap between adjacent cards (COLUMN_WIDTH - CARD_WIDTH) is
-                    // narrower than longer relationship words ("Grandmother"), so a
-                    // label centered in that gap spills onto the neighboring card.
-                    // The row's own header band above the cards is open space (same
-                    // spot the generation label's divider rule already uses), so
-                    // labels float up there instead — same "tag breaking a rule
-                    // line" visual the row label already establishes.
-                    labelY: cardTop(leftNode) - 16,
+                    labelY: y,
                   };
                 }
                 const higher = a.generation > b.generation ? a : b;
