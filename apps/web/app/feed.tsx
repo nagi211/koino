@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import type { FriendshipStatus, PostWithAuthor, Profile, StoryWithAuthor } from "@koino/core";
 import { AccountMenu } from "./account-menu";
 import { AuthModal } from "./auth-modal";
@@ -84,62 +83,18 @@ export function Feed({
         <div className="hidden md:block" />
         {profile ? (
           <div className="flex items-center gap-3">
-            {/* Sidebar has its own permanent "Say hello" entry from md: up (see
-                sidebar.tsx) — this covers the gap below that, where the sidebar
-                itself is hidden, so a guest who dismissed the inline banner still
-                has a way back into the vouch-gate dialog. */}
-            {profile.status === "pending" && (
-              <button
-                type="button"
-                onClick={onOpenVouchGate}
-                aria-label="Say hello"
-                className="text-muted hover:text-foreground md:hidden"
-              >
-                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M8 15V5.5a1.3 1.3 0 0 1 2.6 0V13" strokeLinecap="round" />
-                  <path d="M10.6 13V4a1.3 1.3 0 0 1 2.6 0v9.5" strokeLinecap="round" />
-                  <path d="M13.2 13.5V6a1.3 1.3 0 0 1 2.6 0v9" strokeLinecap="round" />
-                  <path
-                    d="M15.8 15V9a1.3 1.3 0 0 1 2.6 0v6c0 2.8-1.8 5-4.5 5H10c-1.8 0-3-.6-4-1.8l-2.3-2.9a1.15 1.15 0 0 1 1.8-1.43L7 15"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path d="M20.2 5.5c.7.8 1.1 1.7 1.1 2.8s-.4 2-1.1 2.8" strokeLinecap="round" />
-                </svg>
-              </button>
-            )}
-            {/* Friends + bell: sidebar covers both from md: up, so these are mobile-only. */}
-            <button
-              type="button"
-              onClick={onOpenFriends}
-              aria-label="Friends"
-              className="text-muted hover:text-foreground md:hidden"
-            >
-              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="9" cy="8" r="3" />
-                <circle cx="17" cy="9" r="2.5" />
-                <path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5" strokeLinecap="round" />
-                <path d="M15.5 15c2.5.3 4.5 2.2 4.5 5" strokeLinecap="round" />
-              </svg>
-            </button>
-            {/* Family: sidebar covers this from md: up too, same as Friends — the
-                sidebar's own nav is entirely hidden below md, so mobile had no way
-                in at all until now. */}
-            <Link href="/family" aria-label="Family" className="text-muted hover:text-foreground md:hidden">
-              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="8" cy="6" r="2.5" />
-                <circle cx="16" cy="6" r="2.5" />
-                <path d="M3 20c0-3.5 2.2-6 5-6s5 2.5 5 6" strokeLinecap="round" />
-                <path d="M11 20c0-3.5 2.2-6 5-6s5 2.5 5 6" strokeLinecap="round" />
-              </svg>
-            </Link>
+            {/* Bell: sidebar covers this from md: up, so mobile-only here. Every
+                other left-panel destination (Say hello, Friends, Messages,
+                Profile, Family, Moderation, Log out) now lives inside
+                AccountMenu instead of its own icon — the bell is the one thing
+                that stays outside it. */}
             <div className="md:hidden">
               <NotificationBell profile={profile} initialUnreadCount={unreadNotificationCount} />
             </div>
             {/* Account avatar: only the right-side ProfileCard (lg:block) replaces this,
                 so it needs to stay up through the md-lg gap where that panel is still hidden. */}
             <div className="lg:hidden">
-              <AccountMenu profile={profile} />
+              <AccountMenu profile={profile} onOpenFriends={onOpenFriends} onOpenVouchGate={onOpenVouchGate} />
             </div>
           </div>
         ) : (
