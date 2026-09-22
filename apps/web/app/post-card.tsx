@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { PostWithAuthor } from "@koino/core";
 import { Avatar } from "./avatar";
-import { formatPostDate } from "./format-date";
+import { PostDate } from "./post-date";
 import { BACKGROUND_STYLES } from "./post-backgrounds";
 
 export function PostCard({
@@ -32,7 +32,7 @@ export function PostCard({
             <span className={`text-base font-semibold hover:underline ${bg ? "text-white" : "text-foreground"}`}>
               @{post.author_username}
             </span>
-            <span title={new Date(post.created_at).toLocaleString()}>{formatPostDate(post.created_at)}</span>
+            <PostDate iso={post.created_at} />
           </div>
         </Link>
         {menu}

@@ -16,6 +16,7 @@ import { AddFriendButton } from "./add-friend-button";
 import { ProfileLikeButton } from "./profile-like-button";
 import { ProfileViewersButton } from "./profile-viewers-button";
 import { FONT_STACKS } from "./theme";
+import { useMounted } from "../use-mounted";
 
 // "active" has no entry: the status badge (BadgeRow, below) already says "Active
 // member" — this sentence would just repeat it. "pending"/"suspended" keep their
@@ -253,6 +254,18 @@ function ActionSlot({
   );
 }
 
+// toLocaleDateString depends on the runtime's default locale — a server
+// render and a visitor's browser can format the same date as different text
+// (e.g. "9/22/2026" vs "22/9/2026"), which React treats as a hydration
+// mismatch. Rendering nothing until mounted keeps the server and first
+// client render in agreement, then swaps in the real, locale-correct text.
+function MemberSince({ iso }: { iso: string }) {
+  const mounted = useMounted();
+
+  if (!mounted) return null;
+  return <p className="text-xs opacity-60">Member since {new Date(iso).toLocaleDateString()}</p>;
+}
+
 function IdentityDetails({
   target,
   isSelf,
@@ -284,7 +297,7 @@ function IdentityDetails({
           Hobbies: {target.hobbies}
         </p>
       )}
-      <p className="text-xs opacity-60">Member since {new Date(target.created_at).toLocaleDateString()}</p>
+      <MemberSince iso={target.created_at} />
       {isSelf && STATUS_COPY[target.status] && <p className="text-xs opacity-60">{STATUS_COPY[target.status]}</p>}
       <StatsLine profileId={target.id} isSelf={isSelf} likeCount={likeCount} viewerCount={viewerCount} totalViewCount={totalViewCount} />
     </>
