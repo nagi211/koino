@@ -13,6 +13,14 @@ import { ReportModal } from "../report-modal";
 import { VouchGateModal } from "../vouch-gate-modal";
 import { FamilyPanel } from "./family-panel";
 
+function HamburgerIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M4 7h16M4 12h16M4 17h16" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export function FamilyFeed({
   profile,
   posts,
@@ -65,25 +73,27 @@ export function FamilyFeed({
   return (
     <div className="fixed inset-0 flex">
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex shrink-0 items-center justify-between border-b border-card-border bg-background px-4 py-3 sm:px-8">
-          <div className="flex items-center gap-4">
-            <Link href="/" className="text-sm text-muted hover:text-foreground">
-              Back
-            </Link>
-            <h1 className="text-lg font-bold text-foreground">Family</h1>
-          </div>
+        <header className="relative flex shrink-0 items-center justify-between border-b border-card-border bg-background px-4 py-3 sm:px-8">
+          <Link href="/" className="text-sm text-muted hover:text-foreground">
+            Back
+          </Link>
+          <h1 className="absolute left-1/2 -translate-x-1/2 text-lg font-bold text-foreground">Family</h1>
           <div className="flex items-center gap-3">
-            <Link href="/family/tree" className="text-sm text-muted hover:text-foreground">
+            {/* Desktop: the tree link stays visible directly, and the panel
+                below is always on screen (lg:block aside) — nothing to tuck
+                away. Mobile: both fold into the hamburger's drawer instead. */}
+            <Link href="/family/tree" className="hidden text-sm text-muted hover:text-foreground lg:inline">
               Family tree
             </Link>
+            <NotificationBell profile={profile} initialUnreadCount={unreadNotificationCount} />
             <button
               type="button"
               onClick={() => setFamilyDrawerOpen(true)}
-              className="text-sm text-muted hover:text-foreground lg:hidden"
+              aria-label="Family menu"
+              className="text-muted hover:text-foreground lg:hidden"
             >
-              My family
+              <HamburgerIcon />
             </button>
-            <NotificationBell profile={profile} initialUnreadCount={unreadNotificationCount} />
           </div>
         </header>
 
@@ -157,6 +167,14 @@ export function FamilyFeed({
             >
               ✕
             </button>
+            <Link
+              href="/family/tree"
+              onClick={() => setFamilyDrawerOpen(false)}
+              className="mb-3 text-sm font-medium text-foreground hover:text-olive-dark"
+            >
+              Family tree
+            </Link>
+            <div className="mb-3 border-t border-card-border" />
             <FamilyPanel profile={profile} initialFamily={initialFamily} initialRequests={initialRequests} />
           </div>
         </div>
