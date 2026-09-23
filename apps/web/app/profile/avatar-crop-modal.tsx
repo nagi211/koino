@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import Cropper from "react-easy-crop";
 import type { Area } from "react-easy-crop";
 import { Modal } from "../modal";
@@ -18,20 +18,44 @@ export function AvatarCropModal({
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // react-easy-crop's onCropComplete isn't guaranteed to have fired by the
+  // time someone taps "Use photo" (it depends on the image finishing its own
+  // load/layout pass) — gating the button on that with `disabled` meant a fast
+  // first tap was silently swallowed (disabled buttons don't fire onClick at
+  // all), and only a second tap after it quietly became enabled would work.
+  // A ref (not state) plus waiting inside handleSave keeps the button always
+  // tappable and gives real "Saving…" feedback instead of a dead first tap.
+  const croppedAreaRef = useRef<Area | null>(null);
   const handleCropComplete = useCallback((_area: Area, areaPixels: Area) => {
-    setCroppedAreaPixels(areaPixels);
+    croppedAreaRef.current = areaPixels;
   }, []);
 
+  function waitForCropArea(): Promise<Area> {
+    if (croppedAreaRef.current) return Promise.resolve(croppedAreaRef.current);
+    return new Promise((resolve, reject) => {
+      const start = Date.now();
+      const check = () => {
+        if (croppedAreaRef.current) {
+          resolve(croppedAreaRef.current);
+        } else if (Date.now() - start > 5000) {
+          reject(new Error("Photo is still loading — try again in a moment"));
+        } else {
+          requestAnimationFrame(check);
+        }
+      };
+      check();
+    });
+  }
+
   async function handleSave() {
-    if (!croppedAreaPixels) return;
     setError(null);
     setSaving(true);
     try {
-      const blob = await getCroppedImageBlob(imageSrc, croppedAreaPixels, rotation);
+      const area = await waitForCropArea();
+      const blob = await getCroppedImageBlob(imageSrc, area, rotation);
       onSave(blob);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
@@ -99,7 +123,7 @@ export function AvatarCropModal({
         </button>
         <button
           type="button"
-          disabled={saving || !croppedAreaPixels}
+          disabled={saving}
           onClick={handleSave}
           className="flex-1 rounded-xl bg-olive-dark px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
         >
