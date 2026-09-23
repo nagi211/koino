@@ -1,5 +1,5 @@
 import { getViewerProfile } from "@/lib/get-viewer-profile";
-import { ModerationSidebar } from "./moderation-sidebar";
+import { ModerationMobileNav, ModerationSidebar } from "./moderation-sidebar";
 
 export default async function ModerationLayout({ children }: { children: React.ReactNode }) {
   const profile = await getViewerProfile();
@@ -15,11 +15,14 @@ export default async function ModerationLayout({ children }: { children: React.R
   }
 
   return (
-    <div className="flex flex-1 flex-row">
+    <div className="flex flex-1 flex-col md:flex-row">
       <ModerationSidebar />
-      <main className="flex flex-1 justify-center overflow-y-auto">
-        <div className="mx-auto flex w-full max-w-lg flex-col gap-6 p-6">{children}</div>
-      </main>
+      <div className="flex flex-1 flex-col overflow-y-auto">
+        <ModerationMobileNav />
+        <main className="flex flex-1 justify-center">
+          <div className="mx-auto flex w-full max-w-lg flex-col gap-6 p-6">{children}</div>
+        </main>
+      </div>
     </div>
   );
 }

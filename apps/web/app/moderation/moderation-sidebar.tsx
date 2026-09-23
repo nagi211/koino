@@ -44,6 +44,10 @@ const ITEMS = [
   { href: "/moderation/promote", label: "Promote members", Icon: PromoteIcon },
 ] as const;
 
+// Desktop-only rail (see ModerationMobileNav below for the md:hidden
+// counterpart) — this had no responsive handling at all before: a fixed
+// w-56 aside, always rendered, squeezing the actual queue content into
+// almost no room on a phone-width screen.
 export function ModerationSidebar() {
   const pathname = usePathname();
 
@@ -54,7 +58,7 @@ export function ModerationSidebar() {
   }
 
   return (
-    <aside className="flex w-56 shrink-0 flex-col gap-1 border-r border-card-border bg-background p-4">
+    <aside className="hidden w-56 shrink-0 flex-col gap-1 border-r border-card-border bg-background p-4 md:flex">
       <Link href="/" className="mb-6 px-3 text-xl font-bold text-foreground hover:opacity-80">
         Koino
       </Link>
@@ -67,5 +71,34 @@ export function ModerationSidebar() {
         ))}
       </div>
     </aside>
+  );
+}
+
+// Mobile stand-in for the sidebar: a "Back" link (the sidebar's own Koino
+// link disappears with it below md, so this is the only way back to the
+// feed) plus a horizontal scrollable tab strip for the 4 queues, instead of
+// the sidebar's vertical list.
+export function ModerationMobileNav() {
+  const pathname = usePathname();
+
+  function tabClass(active: boolean) {
+    return `shrink-0 rounded-xl px-3 py-1.5 text-sm font-medium transition ${
+      active ? "bg-input text-foreground" : "text-muted hover:text-foreground"
+    }`;
+  }
+
+  return (
+    <div className="flex flex-col gap-2 border-b border-card-border bg-background px-4 py-3 md:hidden">
+      <Link href="/" className="text-sm text-muted hover:text-foreground">
+        Back
+      </Link>
+      <div className="flex gap-2 overflow-x-auto">
+        {ITEMS.map(({ href, label }) => (
+          <Link key={href} href={href} className={tabClass(pathname === href)}>
+            {label}
+          </Link>
+        ))}
+      </div>
+    </div>
   );
 }
