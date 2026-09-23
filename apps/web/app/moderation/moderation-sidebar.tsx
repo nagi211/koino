@@ -101,6 +101,8 @@ export function ModerationMobileNav() {
   return (
     <>
       <div className="flex items-center justify-between border-b border-card-border bg-background px-4 py-3 md:hidden">
+        <span className="w-[22px]" aria-hidden />
+        <span className="text-sm font-semibold text-foreground">Moderation</span>
         <button
           type="button"
           onClick={() => setDrawerOpen(true)}
@@ -109,8 +111,6 @@ export function ModerationMobileNav() {
         >
           <HamburgerIcon />
         </button>
-        <span className="text-sm font-semibold text-foreground">Moderation</span>
-        <span className="w-[22px]" aria-hidden />
       </div>
 
       {drawerOpen && (
