@@ -126,7 +126,7 @@ export function ModerationMobileNav() {
               ✕
             </button>
             <Link href="/" onClick={() => setDrawerOpen(false)} className={itemClass(false)}>
-              ← Back to Koino
+              Back to Koino
             </Link>
             <div className="my-2 border-t border-card-border" />
             {ITEMS.map(({ href, label, Icon }) => (
