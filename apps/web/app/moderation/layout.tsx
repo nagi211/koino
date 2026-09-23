@@ -1,10 +1,8 @@
-import { getMyProfile } from "@koino/core";
-import { createClient } from "@/lib/supabase/server";
+import { getViewerProfile } from "@/lib/get-viewer-profile";
 import { ModerationSidebar } from "./moderation-sidebar";
 
 export default async function ModerationLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createClient();
-  const profile = await getMyProfile(supabase);
+  const profile = await getViewerProfile();
 
   // Suspension revokes moderation authority too, not just posting/commenting/
   // messaging — a suspended leader/admin shouldn't retain either.

@@ -15,11 +15,19 @@ import { AppShell } from "./app-shell";
 
 export default async function Home() {
   const supabase = await createClient();
-  const [profile, posts, stories] = await Promise.all([
-    getMyProfile(supabase),
-    getApprovedFeed(supabase),
-    getActiveStories(supabase),
-  ]);
+  const profilePromise = getMyProfile(supabase);
+  const postsPromise = getApprovedFeed(supabase);
+  const storiesPromise = getActiveStories(supabase);
+
+  const profile = await profilePromise;
+
+  // Only depend on profile.id, not on posts/stories — fired as soon as
+  // profile resolves instead of waiting on the other two as well.
+  const friendsPromise = profile ? getFriends(supabase, profile.id) : null;
+  const pendingRequestsPromise = profile ? getPendingFriendRequests(supabase, profile.id) : null;
+  const unreadCountPromise = profile ? getUnreadNotificationCount(supabase, profile.id) : null;
+
+  const [posts, stories] = await Promise.all([postsPromise, storiesPromise]);
 
   const postIds = posts.map((post) => post.id);
   const authorIds = Array.from(new Set(posts.map((post) => post.author_id).filter((id) => id !== profile?.id)));
@@ -36,9 +44,9 @@ export default async function Home() {
       getMyLikedPostIds(supabase, profile.id, postIds).then((set) => Array.from(set)),
       getMySavedPostIds(supabase, profile.id, postIds).then((set) => Array.from(set)),
       getMyFriendStatuses(supabase, profile.id, authorIds),
-      getFriends(supabase, profile.id),
-      getPendingFriendRequests(supabase, profile.id),
-      getUnreadNotificationCount(supabase, profile.id),
+      friendsPromise!,
+      pendingRequestsPromise!,
+      unreadCountPromise!,
     ]);
   }
 

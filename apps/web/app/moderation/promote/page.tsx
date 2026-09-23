@@ -1,12 +1,13 @@
-import { getMyProfile, listPromotionCandidates } from "@koino/core";
+import { listPromotionCandidates } from "@koino/core";
 import { createClient } from "@/lib/supabase/server";
+import { getViewerProfile } from "@/lib/get-viewer-profile";
 import { PromoteQueue } from "./promote-queue";
 
 export default async function PromoteMembersPage() {
-  const supabase = await createClient();
-  const profile = await getMyProfile(supabase);
+  const profile = await getViewerProfile();
   if (!profile) return null;
 
+  const supabase = await createClient();
   const candidates = await listPromotionCandidates(supabase, profile.id, profile.role);
 
   return (

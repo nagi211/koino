@@ -34,11 +34,6 @@ export default async function ProfileByUsernamePage({ params }: { params: Promis
 
   const isSelf = viewer.id === target.id;
 
-  if (!isSelf) {
-    // Best-effort — a failed view record shouldn't block rendering the profile.
-    await recordProfileView(supabase, target.id, viewer.id).catch(() => {});
-  }
-
   const [topFriends, wallComments, targetFriends, friendStatuses, familyStatuses, latestPost, stats, liked, unreadNotificationCount] =
     await Promise.all([
       getTopFriends(supabase, target.id),
@@ -54,6 +49,10 @@ export default async function ProfileByUsernamePage({ params }: { params: Promis
       getProfileStats(supabase, target.id),
       !isSelf ? hasLikedProfile(supabase, target.id, viewer.id) : Promise.resolve(false),
       getUnreadNotificationCount(supabase, viewer.id),
+      // Best-effort — a failed view record shouldn't block rendering the
+      // profile, and it doesn't need to finish before anything else here
+      // either, so it runs alongside the rest instead of ahead of them.
+      !isSelf ? recordProfileView(supabase, target.id, viewer.id).catch(() => {}) : Promise.resolve(),
     ]);
 
   return (

@@ -24,6 +24,14 @@ export default async function FamilyPage() {
     );
   }
 
+  // getFamily/getPendingFamilyRequests/getUnreadNotificationCount don't need
+  // anything from the feed, so they're fired off immediately rather than
+  // waiting on it — only the three queries below that actually need
+  // postIds/authorIds have to wait for getFamilyFeed to resolve first.
+  const familyPromise = getFamily(supabase, profile.id);
+  const pendingRequestsPromise = getPendingFamilyRequests(supabase, profile.id);
+  const unreadNotificationCountPromise = getUnreadNotificationCount(supabase, profile.id);
+
   const posts = await getFamilyFeed(supabase);
   const postIds = posts.map((post) => post.id);
   const authorIds = Array.from(new Set(posts.map((post) => post.author_id).filter((id) => id !== profile.id)));
@@ -32,9 +40,9 @@ export default async function FamilyPage() {
     getMyLikedPostIds(supabase, profile.id, postIds).then((set) => Array.from(set)),
     getMySavedPostIds(supabase, profile.id, postIds).then((set) => Array.from(set)),
     getMyFriendStatuses(supabase, profile.id, authorIds),
-    getFamily(supabase, profile.id),
-    getPendingFamilyRequests(supabase, profile.id),
-    getUnreadNotificationCount(supabase, profile.id),
+    familyPromise,
+    pendingRequestsPromise,
+    unreadNotificationCountPromise,
   ]);
 
   return (
