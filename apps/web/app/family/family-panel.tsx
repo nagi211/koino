@@ -194,7 +194,12 @@ export function FamilyPanel({
       )}
 
       <div className="min-h-0 flex-1 overflow-y-auto">
-        <h3 className="mb-2 text-sm font-semibold text-foreground">Family</h3>
+        <div className="mb-2 flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-foreground">Family</h3>
+          <Link href="/family/tree" className="text-xs font-medium text-olive-dark hover:underline">
+            Family tree →
+          </Link>
+        </div>
         {family.length === 0 ? (
           <p className="text-sm text-muted">No family connections yet.</p>
         ) : (

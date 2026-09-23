@@ -79,12 +79,9 @@ export function FamilyFeed({
           </Link>
           <h1 className="absolute left-1/2 -translate-x-1/2 text-lg font-bold text-foreground">Family</h1>
           <div className="flex items-center gap-3">
-            {/* Desktop: the tree link stays visible directly, and the panel
-                below is always on screen (lg:block aside) — nothing to tuck
-                away. Mobile: both fold into the hamburger's drawer instead. */}
-            <Link href="/family/tree" className="hidden text-sm text-muted hover:text-foreground lg:inline">
-              Family tree
-            </Link>
+            {/* Family tree link now lives inside FamilyPanel's own "Family"
+                section (desktop aside / mobile drawer both render it), so
+                there's nothing tree-related left to duplicate up here. */}
             <NotificationBell profile={profile} initialUnreadCount={unreadNotificationCount} />
             <button
               type="button"
@@ -167,14 +164,6 @@ export function FamilyFeed({
             >
               ✕
             </button>
-            <Link
-              href="/family/tree"
-              onClick={() => setFamilyDrawerOpen(false)}
-              className="mb-3 text-sm font-medium text-foreground hover:text-olive-dark"
-            >
-              Family tree
-            </Link>
-            <div className="mb-3 border-t border-card-border" />
             <FamilyPanel profile={profile} initialFamily={initialFamily} initialRequests={initialRequests} />
           </div>
         </div>
