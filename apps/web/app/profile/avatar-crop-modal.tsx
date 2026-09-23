@@ -13,7 +13,7 @@ export function AvatarCropModal({
 }: {
   imageSrc: string;
   onCancel: () => void;
-  onSave: (blob: Blob) => void;
+  onSave: (blob: Blob) => void | Promise<void>;
 }) {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -56,7 +56,13 @@ export function AvatarCropModal({
     try {
       const area = await waitForCropArea();
       const blob = await getCroppedImageBlob(imageSrc, area, rotation);
-      onSave(blob);
+      // onSave (handleCroppedAvatar) does the real upload + profile update and
+      // is itself async — awaiting it here matters: without it, "finally"
+      // below fires right after onSave is merely *called*, reverting this
+      // button back to "Use photo" while the real upload is still running in
+      // the background, well before the modal actually closes. Awaiting it
+      // keeps "Saving…" up for the button's whole real lifetime.
+      await onSave(blob);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
