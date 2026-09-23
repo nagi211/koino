@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -33,6 +34,14 @@ function PromoteIcon() {
   return (
     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
       <path d="M12 3l2.5 5 5.5.7-4 3.9.9 5.4-4.9-2.6-4.9 2.6.9-5.4-4-3.9 5.5-.7z" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function HamburgerIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M4 7h16M4 12h16M4 17h16" strokeLinecap="round" />
     </svg>
   );
 }
@@ -74,31 +83,61 @@ export function ModerationSidebar() {
   );
 }
 
-// Mobile stand-in for the sidebar: a "Back" link (the sidebar's own Koino
-// link disappears with it below md, so this is the only way back to the
-// feed) plus a horizontal scrollable tab strip for the 4 queues, instead of
-// the sidebar's vertical list.
+// Mobile stand-in for the sidebar: a hamburger button opens a right-side
+// drawer with the same 4 queues (plus a way back to the feed, since the
+// sidebar's own Koino link disappears with it below md) — the same drawer
+// pattern already used for Friends (app-shell.tsx) and Family
+// (family-feed.tsx) on mobile, rather than introducing a new one.
 export function ModerationMobileNav() {
   const pathname = usePathname();
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
-  function tabClass(active: boolean) {
-    return `shrink-0 rounded-xl px-3 py-1.5 text-sm font-medium transition ${
+  function itemClass(active: boolean) {
+    return `flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition ${
       active ? "bg-input text-foreground" : "text-muted hover:text-foreground"
     }`;
   }
 
   return (
-    <div className="flex flex-col gap-2 border-b border-card-border bg-background px-4 py-3 md:hidden">
-      <Link href="/" className="text-sm text-muted hover:text-foreground">
-        Back
-      </Link>
-      <div className="flex gap-2 overflow-x-auto">
-        {ITEMS.map(({ href, label }) => (
-          <Link key={href} href={href} className={tabClass(pathname === href)}>
-            {label}
-          </Link>
-        ))}
+    <>
+      <div className="flex items-center justify-between border-b border-card-border bg-background px-4 py-3 md:hidden">
+        <button
+          type="button"
+          onClick={() => setDrawerOpen(true)}
+          aria-label="Moderation menu"
+          className="text-muted hover:text-foreground"
+        >
+          <HamburgerIcon />
+        </button>
+        <span className="text-sm font-semibold text-foreground">Moderation</span>
+        <span className="w-[22px]" aria-hidden />
       </div>
-    </div>
+
+      {drawerOpen && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setDrawerOpen(false)} />
+          <div className="absolute right-0 top-0 flex h-full w-72 max-w-[85vw] flex-col gap-1 overflow-y-auto bg-background p-4 shadow-xl">
+            <button
+              type="button"
+              onClick={() => setDrawerOpen(false)}
+              aria-label="Close"
+              className="mb-2 self-end text-muted hover:text-foreground"
+            >
+              ✕
+            </button>
+            <Link href="/" onClick={() => setDrawerOpen(false)} className={itemClass(false)}>
+              ← Back to Koino
+            </Link>
+            <div className="my-2 border-t border-card-border" />
+            {ITEMS.map(({ href, label, Icon }) => (
+              <Link key={href} href={href} onClick={() => setDrawerOpen(false)} className={itemClass(pathname === href)}>
+                <Icon />
+                {label}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+    </>
   );
 }
