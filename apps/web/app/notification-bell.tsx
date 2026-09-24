@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { getUnreadNotificationCount, listNotifications, markAllNotificationsRead, subscribeToNotifications } from "@koino/core";
 import type { NotificationWithActor, Profile } from "@koino/core";
@@ -72,16 +72,31 @@ export function NotificationBell({
   // against this same table/recipient (a fresh subscription reliably works; the
   // existing one silently goes quiet server-side with no client-visible error).
   const [subscriptionGeneration, setSubscriptionGeneration] = useState(0);
+  // Mirrors `open` for the subscription callback below, which closes over a
+  // stale `open` from whenever its effect last ran — a ref always reads current.
+  const openRef = useRef(false);
 
   useEffect(() => {
     return subscribeToNotifications(createClient(), profile.id, () => {
       getUnreadNotificationCount(createClient(), profile.id).then(setUnreadCount);
-      setNotifications(null); // stale — refetch next time the dropdown opens
+      // Only invalidate the cached list while the dropdown is closed. While
+      // it's open, handleToggle's own markAllNotificationsRead write below is
+      // itself a change on this recipient's rows — the still-active
+      // subscription would otherwise pick that up and null the list out from
+      // under whatever the user is mid-tap on, which is exactly what made
+      // tapping a notification intermittently do nothing on real devices.
+      if (!openRef.current) setNotifications(null);
     });
   }, [profile.id, subscriptionGeneration]);
 
+  function closeDropdown() {
+    openRef.current = false;
+    setOpen(false);
+  }
+
   async function handleToggle() {
     const next = !open;
+    openRef.current = next;
     setOpen(next);
     if (!next || notifications) return;
     setLoading(true);
@@ -126,7 +141,7 @@ export function NotificationBell({
 
       {open && (
         <>
-          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="fixed inset-0 z-10" onClick={closeDropdown} />
           <div
             className={`absolute top-full z-20 mt-2 max-h-96 w-80 overflow-y-auto rounded-xl border border-card-border bg-card shadow-lg ${
               align === "left" ? "left-0" : "right-0"
@@ -141,7 +156,7 @@ export function NotificationBell({
                   <li key={notification.id} className="border-b border-card-border last:border-0">
                     <Link
                       href={targetHref(notification)}
-                      onClick={() => setOpen(false)}
+                      onClick={closeDropdown}
                       className="flex items-center gap-3 px-4 py-3 hover:bg-input"
                     >
                       <Avatar url={notification.actor_avatar_url} username={notification.actor_username ?? "?"} size={32} />
