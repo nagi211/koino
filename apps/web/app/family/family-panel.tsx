@@ -197,7 +197,7 @@ export function FamilyPanel({
         <div className="mb-2 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-foreground">Family</h3>
           <Link href="/family/tree" className="text-xs font-medium text-olive-dark hover:underline">
-            Family tree →
+            Family tree
           </Link>
         </div>
         {family.length === 0 ? (
