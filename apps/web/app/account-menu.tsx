@@ -23,7 +23,9 @@ export function AccountMenu({
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [loggingOut, startLogoutTransition] = useTransition();
+  const [signingOut, setSigningOut] = useState(false);
+  const [isRefreshing, startLogoutTransition] = useTransition();
+  const loggingOut = signingOut || isRefreshing;
   const awaitingLogoutRefresh = useRef(false);
 
   // Closing the menu only once the post-refresh (signed-out) page has
@@ -31,14 +33,19 @@ export function AccountMenu({
   // menu gone but the page underneath still showing stale signed-in content
   // for a moment, which read as the tap having done nothing.
   useEffect(() => {
-    if (awaitingLogoutRefresh.current && !loggingOut) {
+    if (awaitingLogoutRefresh.current && !isRefreshing) {
       awaitingLogoutRefresh.current = false;
       setOpen(false);
     }
-  }, [loggingOut]);
+  }, [isRefreshing]);
 
   async function handleLogout() {
-    await signOut(createClient());
+    setSigningOut(true);
+    try {
+      await signOut(createClient());
+    } finally {
+      setSigningOut(false);
+    }
     awaitingLogoutRefresh.current = true;
     startLogoutTransition(() => {
       router.refresh();

@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "@koino/core";
@@ -106,11 +106,18 @@ export function Sidebar({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [loggingOut, startLogoutTransition] = useTransition();
+  const [signingOut, setSigningOut] = useState(false);
+  const [isRefreshing, startLogoutTransition] = useTransition();
+  const loggingOut = signingOut || isRefreshing;
 
   async function handleLogout() {
-    await signOut(createClient());
-    // Wrapped so `loggingOut` stays true until the refreshed (now
+    setSigningOut(true);
+    try {
+      await signOut(createClient());
+    } finally {
+      setSigningOut(false);
+    }
+    // Wrapped so `isRefreshing` stays true until the refreshed (now
     // signed-out) page actually renders, not just until signOut resolves —
     // otherwise the button looked idle again while the page underneath was
     // still showing stale signed-in content for a moment.
