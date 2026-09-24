@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signOut } from "@koino/core";
@@ -23,11 +23,26 @@ export function AccountMenu({
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [loggingOut, startLogoutTransition] = useTransition();
+  const awaitingLogoutRefresh = useRef(false);
+
+  // Closing the menu only once the post-refresh (signed-out) page has
+  // actually rendered, instead of on click — closing it immediately left the
+  // menu gone but the page underneath still showing stale signed-in content
+  // for a moment, which read as the tap having done nothing.
+  useEffect(() => {
+    if (awaitingLogoutRefresh.current && !loggingOut) {
+      awaitingLogoutRefresh.current = false;
+      setOpen(false);
+    }
+  }, [loggingOut]);
 
   async function handleLogout() {
-    setOpen(false);
     await signOut(createClient());
-    router.refresh();
+    awaitingLogoutRefresh.current = true;
+    startLogoutTransition(() => {
+      router.refresh();
+    });
   }
 
   const itemClass = "block w-full px-4 py-2 text-left text-sm text-foreground hover:bg-input";
@@ -79,8 +94,13 @@ export function AccountMenu({
                 Moderation
               </Link>
             )}
-            <button type="button" onClick={handleLogout} className={`${itemClass} border-t border-card-border`}>
-              Log out
+            <button
+              type="button"
+              onClick={handleLogout}
+              disabled={loggingOut}
+              className={`${itemClass} border-t border-card-border disabled:opacity-50`}
+            >
+              {loggingOut ? "Logging out…" : "Log out"}
             </button>
           </div>
         </>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { signIn, signUp, signInSchema, signUpSchema } from "@koino/core";
 import { createClient } from "@/lib/supabase/client";
@@ -20,6 +20,21 @@ export function AuthForm({
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  // router.refresh() re-fetches everything server-rendered but doesn't await —
+  // without this, the caller (e.g. AuthModal) closed immediately on the old,
+  // still-signed-out page underneath, which sat frozen until the refresh
+  // quietly landed a moment later. Wrapping it in a transition makes
+  // isRefreshing track that gap, so the button/modal can stay in a loading
+  // state for the whole thing instead of just the API call.
+  const [isRefreshing, startTransition] = useTransition();
+  const awaitingRefresh = useRef(false);
+
+  useEffect(() => {
+    if (awaitingRefresh.current && !isRefreshing) {
+      awaitingRefresh.current = false;
+      onSuccess?.();
+    }
+  }, [isRefreshing, onSuccess]);
 
   function validateField(field: "username" | "email" | "password", value: string) {
     const schema = mode === "sign-up" ? signUpSchema : signInSchema;
@@ -67,14 +82,18 @@ export function AuthForm({
       } else {
         await signIn(client, parsed.data as { email: string; password: string });
       }
-      router.refresh();
-      onSuccess?.();
+      awaitingRefresh.current = true;
+      startTransition(() => {
+        router.refresh();
+      });
     } catch (err) {
       setFormError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
       setPending(false);
     }
   }
+
+  const submitting = pending || isRefreshing;
 
   const inputClasses =
     "w-full rounded-xl border border-card-border bg-input px-4 py-3 text-foreground placeholder:text-muted outline-none transition focus:border-olive-dark focus:ring-2 focus:ring-olive/50";
@@ -143,10 +162,10 @@ export function AuthForm({
 
       <button
         type="submit"
-        disabled={pending}
+        disabled={submitting}
         className="mt-1 w-full rounded-xl bg-olive-dark px-4 py-3 font-medium text-white shadow-md transition hover:brightness-105 disabled:opacity-50"
       >
-        {pending ? "Please wait…" : mode === "sign-up" ? "Create account" : "Sign in"}
+        {submitting ? "Please wait…" : mode === "sign-up" ? "Create account" : "Sign in"}
       </button>
 
       {mode === "sign-up" && (
