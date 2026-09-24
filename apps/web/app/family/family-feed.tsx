@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import type { FamilyConnectionWithProfile, FriendshipStatus, PostWithAuthor, Profile } from "@koino/core";
@@ -51,6 +51,19 @@ export function FamilyFeed({
   // "wants to connect as family") should still land the viewer directly on the
   // panel with the request, not just the post feed.
   const [familyDrawerOpen, setFamilyDrawerOpen] = useState(() => searchParams.get("requests") !== null);
+  // The lazy initializer above only runs once, on mount — if this page is
+  // already mounted (e.g. tapping a family notification from the bell while
+  // already on /family) Next.js reuses the instance and just updates the
+  // query string, so the initializer never re-fires and the drawer silently
+  // never opens. This reacts to the param on every change, not just mount,
+  // guarded so it only opens the drawer once per distinct "requests" value.
+  const appliedRequestsParam = useRef<string | null>(null);
+  useEffect(() => {
+    const requestsParam = searchParams.get("requests");
+    if (requestsParam === null || requestsParam === appliedRequestsParam.current) return;
+    appliedRequestsParam.current = requestsParam;
+    setFamilyDrawerOpen((current) => current || true);
+  }, [searchParams]);
 
   // Commenting/reporting still require an active account, same as the public
   // feed — only *posting* and *liking* within family are open to any
