@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import type { FamilyConnectionStatus, FriendshipStatus } from "@koino/core";
 import {
   getFriends,
@@ -24,13 +24,7 @@ export default async function ProfileByUsernamePage({ params }: { params: Promis
   const [viewer, target] = await Promise.all([getMyProfile(supabase), getProfileByUsername(supabase, username)]);
   if (!target) notFound();
 
-  if (!viewer) {
-    return (
-      <main className="flex flex-1 items-center justify-center p-8">
-        <p className="text-muted">Sign in to view profiles.</p>
-      </main>
-    );
-  }
+  if (!viewer) redirect("/");
 
   const isSelf = viewer.id === target.id;
 

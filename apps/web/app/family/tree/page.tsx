@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { getFamilyTree, getMyProfile, getProfilesByIds } from "@koino/core";
 import { createClient } from "@/lib/supabase/server";
 import { FamilyTreeView } from "./family-tree-view";
@@ -6,13 +7,7 @@ export default async function FamilyTreePage() {
   const supabase = await createClient();
   const profile = await getMyProfile(supabase);
 
-  if (!profile) {
-    return (
-      <main className="flex flex-1 items-center justify-center p-8">
-        <p className="text-muted">Sign in to see your family tree.</p>
-      </main>
-    );
-  }
+  if (!profile) redirect("/");
 
   const edges = await getFamilyTree(supabase);
 

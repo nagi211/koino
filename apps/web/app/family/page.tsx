@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import type { FriendshipStatus } from "@koino/core";
 import {
   getFamily,
@@ -16,13 +17,10 @@ export default async function FamilyPage() {
   const supabase = await createClient();
   const profile = await getMyProfile(supabase);
 
-  if (!profile) {
-    return (
-      <main className="flex flex-1 items-center justify-center p-8">
-        <p className="text-muted">Sign in to see your family circle.</p>
-      </main>
-    );
-  }
+  // The home feed already handles a signed-out visitor (public posts + a
+  // sign-in entry point), so send them there instead of stranding them on a
+  // dead-end "Sign in to..." message with no way to actually sign in.
+  if (!profile) redirect("/");
 
   // getFamily/getPendingFamilyRequests/getUnreadNotificationCount don't need
   // anything from the feed, so they're fired off immediately rather than
