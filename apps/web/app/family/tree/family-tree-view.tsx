@@ -204,11 +204,11 @@ export function FamilyTreeView({ viewer, edges, profiles }: { viewer: Profile; e
 
   return (
     <div className="fixed inset-0 flex flex-col">
-      <header className="flex shrink-0 items-center gap-4 border-b border-card-border bg-background px-4 py-3 sm:px-8">
+      <header className="relative flex shrink-0 items-center border-b border-card-border bg-background px-4 py-3 sm:px-8">
         <Link href="/family" className="text-sm text-muted hover:text-foreground">
           Back
         </Link>
-        <h1 className="font-serif text-lg font-semibold text-foreground">Family tree</h1>
+        <h1 className="absolute left-1/2 -translate-x-1/2 font-serif text-lg font-semibold text-foreground">Family tree</h1>
       </header>
 
       <div className="min-h-0 flex-1 overflow-auto bg-background p-8">
