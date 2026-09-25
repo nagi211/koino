@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { FamilyConnectionWithProfile, FriendshipStatus, PostWithAuthor, Profile } from "@koino/core";
 import { NotificationBell } from "../notification-bell";
 import { PostActions } from "../post-actions";
@@ -45,6 +45,7 @@ export function FamilyFeed({
   const [composerOpen, setComposerOpen] = useState(false);
   const [reportTarget, setReportTarget] = useState<PostWithAuthor | null>(null);
   const [vouchGateOpen, setVouchGateOpen] = useState(false);
+  const router = useRouter();
   const searchParams = useSearchParams();
   // On mobile the family panel lives behind a drawer, not always on screen like
   // it is on desktop (lg:block aside below) — a notification linking here (e.g.
@@ -69,6 +70,18 @@ export function FamilyFeed({
     appliedSearchParams.current = searchParams;
     setFamilyDrawerOpen((current) => current || true);
   }, [searchParams]);
+
+  // Closing must also drop "?requests=1" from the URL, not just flip local
+  // state — otherwise the URL stays parked on /family?requests=1 forever, so
+  // tapping a LATER family notification (same literal href) lands on a URL
+  // that's already current and isn't a real navigation at all, and silently
+  // does nothing until the page is manually reloaded.
+  function closeFamilyDrawer() {
+    setFamilyDrawerOpen(false);
+    if (searchParams.get("requests") !== null) {
+      router.replace("/family", { scroll: false });
+    }
+  }
 
   // Commenting/reporting still require an active account, same as the public
   // feed — only *posting* and *liking* within family are open to any
@@ -172,11 +185,11 @@ export function FamilyFeed({
 
       {familyDrawerOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setFamilyDrawerOpen(false)} />
+          <div className="absolute inset-0 bg-black/50" onClick={closeFamilyDrawer} />
           <div className="absolute right-0 top-0 flex h-full w-80 max-w-[85vw] flex-col overflow-y-auto bg-background p-4 shadow-xl">
             <button
               type="button"
-              onClick={() => setFamilyDrawerOpen(false)}
+              onClick={closeFamilyDrawer}
               aria-label="Close"
               className="mb-2 self-end text-muted hover:text-foreground"
             >
