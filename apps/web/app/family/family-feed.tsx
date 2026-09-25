@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import type { FamilyConnectionWithProfile, FriendshipStatus, PostWithAuthor, Profile } from "@koino/core";
 import { NotificationBell } from "../notification-bell";
 import { PostActions } from "../post-actions";
@@ -45,7 +45,6 @@ export function FamilyFeed({
   const [composerOpen, setComposerOpen] = useState(false);
   const [reportTarget, setReportTarget] = useState<PostWithAuthor | null>(null);
   const [vouchGateOpen, setVouchGateOpen] = useState(false);
-  const router = useRouter();
   const searchParams = useSearchParams();
   // On mobile the family panel lives behind a drawer, not always on screen like
   // it is on desktop (lg:block aside below) — a notification linking here (e.g.
@@ -65,21 +64,24 @@ export function FamilyFeed({
   // all), so memoize on that reference instead — correct, and still
   // structured the way this repo's react-hooks/set-state-in-effect rule wants.
   //
-  // The param is cleared right here too, in the same effect run that opens
-  // the drawer — NOT later from the drawer's own close button. A router
-  // push/replace call made from that later, separate interaction was
-  // confirmed (via diagnostic logging) to fire but silently never update the
-  // URL or searchParams, some Next.js router quirk around issuing another
-  // navigation call soon after the Link-driven one that landed here. Doing
-  // it inline, as a continuation of the same navigation instead of a new one
-  // triggered later, avoids whatever that race is.
+  // The param also needs clearing afterward, or a LATER family notification
+  // (same literal href) lands on a URL that's already current and does
+  // nothing. router.replace/push — tried both, inline in this same effect
+  // and later from the drawer's close button — consistently fired (confirmed
+  // via diagnostic logging in production) but never actually updated the URL
+  // or searchParams: some Next.js App Router quirk around a programmatic
+  // navigation call issued soon after the Link-driven one that landed here.
+  // A raw history.replaceState sidesteps Next's router for just this reset;
+  // the NEXT notification tap is still a real <Link> click going through
+  // Next's own (working) click-navigation path, not a programmatic call, so
+  // it isn't affected by whatever that quirk is.
   const appliedSearchParams = useRef<ReturnType<typeof useSearchParams> | null>(null);
   useEffect(() => {
     if (searchParams.get("requests") === null || searchParams === appliedSearchParams.current) return;
     appliedSearchParams.current = searchParams;
     setFamilyDrawerOpen((current) => current || true);
-    router.replace("/family", { scroll: false });
-  }, [searchParams, router]);
+    window.history.replaceState(window.history.state, "", "/family");
+  }, [searchParams]);
 
   // Commenting/reporting still require an active account, same as the public
   // feed — only *posting* and *liking* within family are open to any
