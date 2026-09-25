@@ -80,8 +80,8 @@ export function FamilyFeed({
     console.log("[diag] closeFamilyDrawer called, requests param:", searchParams.get("requests"));
     setFamilyDrawerOpen(false);
     if (searchParams.get("requests") !== null) {
-      console.log("[diag] calling router.replace");
-      router.replace("/family", { scroll: false });
+      console.log("[diag] calling router.push");
+      router.push("/family", { scroll: false });
     }
   }
 
