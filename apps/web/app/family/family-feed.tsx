@@ -77,8 +77,10 @@ export function FamilyFeed({
   // that's already current and isn't a real navigation at all, and silently
   // does nothing until the page is manually reloaded.
   function closeFamilyDrawer() {
+    console.log("[diag] closeFamilyDrawer called, requests param:", searchParams.get("requests"));
     setFamilyDrawerOpen(false);
     if (searchParams.get("requests") !== null) {
+      console.log("[diag] calling router.replace");
       router.replace("/family", { scroll: false });
     }
   }
