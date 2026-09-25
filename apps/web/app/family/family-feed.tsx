@@ -55,13 +55,18 @@ export function FamilyFeed({
   // already mounted (e.g. tapping a family notification from the bell while
   // already on /family) Next.js reuses the instance and just updates the
   // query string, so the initializer never re-fires and the drawer silently
-  // never opens. This reacts to the param on every change, not just mount,
-  // guarded so it only opens the drawer once per distinct "requests" value.
-  const appliedRequestsParam = useRef<string | null>(null);
+  // never opens. This reacts to the param on every change after mount.
+  // Every family notification links to the same literal "?requests=1" (not a
+  // per-notification id) — memoizing on THAT string would make exactly one
+  // notification tap per page load work and silently eat every one after it.
+  // useSearchParams() hands back a new object on every real navigation
+  // though (confirmed: this is why the effect re-fires for a repeat "1" at
+  // all), so memoize on that reference instead — correct, and still
+  // structured the way this repo's react-hooks/set-state-in-effect rule wants.
+  const appliedSearchParams = useRef<ReturnType<typeof useSearchParams> | null>(null);
   useEffect(() => {
-    const requestsParam = searchParams.get("requests");
-    if (requestsParam === null || requestsParam === appliedRequestsParam.current) return;
-    appliedRequestsParam.current = requestsParam;
+    if (searchParams.get("requests") === null || searchParams === appliedSearchParams.current) return;
+    appliedSearchParams.current = searchParams;
     setFamilyDrawerOpen((current) => current || true);
   }, [searchParams]);
 
