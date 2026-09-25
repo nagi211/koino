@@ -34,9 +34,13 @@ function targetHref(notification: NotificationWithActor): string {
   // Unlike friends (no standalone page — the FriendsPanel already sits
   // permanently in the home sidebar/drawer), family has its own /family page,
   // so a family notification should land there instead of the actor's
-  // profile. ?requests=1 opens the mobile drawer straight to the panel that
-  // has the pending/just-accepted request (see family-feed.tsx).
-  if (notification.type === "family_request" || notification.type === "family_accept") return "/family?requests=1";
+  // profile. ?requests=<id> opens the mobile drawer straight to the panel
+  // that has the pending/just-accepted request (see family-feed.tsx). Using
+  // the notification's own id (not a hardcoded literal) matters: every
+  // family notification would otherwise point at the exact same URL, so
+  // tapping a second one while already on /family from an earlier tap isn't
+  // a new navigation at all as far as the browser/router is concerned.
+  if (notification.type === "family_request" || notification.type === "family_accept") return `/family?requests=${notification.id}`;
   return notification.actor_username ? `/profile/${notification.actor_username}` : "/profile";
 }
 

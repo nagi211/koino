@@ -56,31 +56,19 @@ export function FamilyFeed({
   // already on /family) Next.js reuses the instance and just updates the
   // query string, so the initializer never re-fires and the drawer silently
   // never opens. This reacts to the param on every change after mount.
-  // Every family notification links to the same literal "?requests=1" (not a
-  // per-notification id) — memoizing on THAT string would make exactly one
-  // notification tap per page load work and silently eat every one after it.
-  // useSearchParams() hands back a new object on every real navigation
-  // though (confirmed: this is why the effect re-fires for a repeat "1" at
-  // all), so memoize on that reference instead — correct, and still
-  // structured the way this repo's react-hooks/set-state-in-effect rule wants.
-  //
-  // The param also needs clearing afterward, or a LATER family notification
-  // (same literal href) lands on a URL that's already current and does
-  // nothing. router.replace/push — tried both, inline in this same effect
-  // and later from the drawer's close button — consistently fired (confirmed
-  // via diagnostic logging in production) but never actually updated the URL
-  // or searchParams: some Next.js App Router quirk around a programmatic
-  // navigation call issued soon after the Link-driven one that landed here.
-  // A raw history.replaceState sidesteps Next's router for just this reset;
-  // the NEXT notification tap is still a real <Link> click going through
-  // Next's own (working) click-navigation path, not a programmatic call, so
-  // it isn't affected by whatever that quirk is.
-  const appliedSearchParams = useRef<ReturnType<typeof useSearchParams> | null>(null);
+  // notification-bell.tsx puts the notification's own id in "requests" (not
+  // a hardcoded literal), so every family notification's link is genuinely
+  // distinct — memoizing on that string is enough to open once per
+  // notification without needing to reset the URL in between (attempted via
+  // router.replace/push and even the raw History API; all three turned out
+  // unreliable here for reasons not fully pinned down — simply not needing a
+  // reset at all sidesteps the problem instead).
+  const appliedRequestsParam = useRef<string | null>(null);
   useEffect(() => {
-    if (searchParams.get("requests") === null || searchParams === appliedSearchParams.current) return;
-    appliedSearchParams.current = searchParams;
+    const requestsParam = searchParams.get("requests");
+    if (requestsParam === null || requestsParam === appliedRequestsParam.current) return;
+    appliedRequestsParam.current = requestsParam;
     setFamilyDrawerOpen((current) => current || true);
-    window.history.replaceState(window.history.state, "", "/family");
   }, [searchParams]);
 
   // Commenting/reporting still require an active account, same as the public
