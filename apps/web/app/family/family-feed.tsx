@@ -64,26 +64,22 @@ export function FamilyFeed({
   // though (confirmed: this is why the effect re-fires for a repeat "1" at
   // all), so memoize on that reference instead — correct, and still
   // structured the way this repo's react-hooks/set-state-in-effect rule wants.
+  //
+  // The param is cleared right here too, in the same effect run that opens
+  // the drawer — NOT later from the drawer's own close button. A router
+  // push/replace call made from that later, separate interaction was
+  // confirmed (via diagnostic logging) to fire but silently never update the
+  // URL or searchParams, some Next.js router quirk around issuing another
+  // navigation call soon after the Link-driven one that landed here. Doing
+  // it inline, as a continuation of the same navigation instead of a new one
+  // triggered later, avoids whatever that race is.
   const appliedSearchParams = useRef<ReturnType<typeof useSearchParams> | null>(null);
   useEffect(() => {
     if (searchParams.get("requests") === null || searchParams === appliedSearchParams.current) return;
     appliedSearchParams.current = searchParams;
     setFamilyDrawerOpen((current) => current || true);
-  }, [searchParams]);
-
-  // Closing must also drop "?requests=1" from the URL, not just flip local
-  // state — otherwise the URL stays parked on /family?requests=1 forever, so
-  // tapping a LATER family notification (same literal href) lands on a URL
-  // that's already current and isn't a real navigation at all, and silently
-  // does nothing until the page is manually reloaded.
-  function closeFamilyDrawer() {
-    console.log("[diag] closeFamilyDrawer called, requests param:", searchParams.get("requests"));
-    setFamilyDrawerOpen(false);
-    if (searchParams.get("requests") !== null) {
-      console.log("[diag] calling router.push");
-      router.push("/family", { scroll: false });
-    }
-  }
+    router.replace("/family", { scroll: false });
+  }, [searchParams, router]);
 
   // Commenting/reporting still require an active account, same as the public
   // feed — only *posting* and *liking* within family are open to any
@@ -187,11 +183,11 @@ export function FamilyFeed({
 
       {familyDrawerOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
-          <div className="absolute inset-0 bg-black/50" onClick={closeFamilyDrawer} />
+          <div className="absolute inset-0 bg-black/50" onClick={() => setFamilyDrawerOpen(false)} />
           <div className="absolute right-0 top-0 flex h-full w-80 max-w-[85vw] flex-col overflow-y-auto bg-background p-4 shadow-xl">
             <button
               type="button"
-              onClick={closeFamilyDrawer}
+              onClick={() => setFamilyDrawerOpen(false)}
               aria-label="Close"
               className="mb-2 self-end text-muted hover:text-foreground"
             >
