@@ -78,6 +78,7 @@ export function FamilyFeed({
   // does nothing until the page is manually reloaded.
   function closeFamilyDrawer() {
     setFamilyDrawerOpen(false);
+    console.log("[diag] closeFamilyDrawer, requests param:", searchParams.get("requests"));
     if (searchParams.get("requests") !== null) {
       router.replace("/family", { scroll: false });
     }
