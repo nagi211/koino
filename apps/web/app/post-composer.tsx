@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createPost, createPostSchema, POST_BACKGROUNDS, type PostBackground } from "@koino/core";
+import { createPost, createPostSchema, POST_BACKGROUNDS, type PostAudience, type PostBackground } from "@koino/core";
 import { createClient } from "@/lib/supabase/client";
 import { Modal } from "./modal";
 import { BACKGROUND_STYLES } from "./post-backgrounds";
@@ -21,7 +21,7 @@ export function PostComposer({
   open: boolean;
   onClose: () => void;
   authorId: string;
-  audience?: "public" | "family";
+  audience?: PostAudience;
 }) {
   const router = useRouter();
   const [type, setType] = useState<PostType>("text");

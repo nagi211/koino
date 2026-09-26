@@ -55,6 +55,18 @@ export async function getFamilyFeed(client: SupabaseClient<Database>): Promise<P
   return withAuthorUsername(data as unknown as RawPostRow[]);
 }
 
+/** The friends-only feed — RLS scopes this to confirmed friends who aren't also confirmed family (see 0036). */
+export async function getFriendsFeed(client: SupabaseClient<Database>): Promise<PostWithAuthor[]> {
+  const { data, error } = await client
+    .from("posts")
+    .select(FEED_SELECT)
+    .eq("audience", "friends")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+
+  return withAuthorUsername(data as unknown as RawPostRow[]);
+}
+
 // Posts are approved instantly now (see 0030_auto_approve_all_posts.sql) — this
 // is a monitoring feed, not an approval queue. Unlike the old pending-only
 // query, RLS alone doesn't scope this to the leader's group anymore: approved

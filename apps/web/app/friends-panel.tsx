@@ -161,7 +161,12 @@ export function FriendsPanel({
       )}
 
       <div className="min-h-0 flex-1 overflow-y-auto">
-        <h3 className="mb-2 text-sm font-semibold text-foreground">Friends</h3>
+        <div className="mb-2 flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-foreground">Friends</h3>
+          <Link href="/friends" className="text-xs font-medium text-olive-dark hover:underline">
+            Friends feed
+          </Link>
+        </div>
         {friends.length === 0 ? (
           <p className="text-sm text-muted">No friends yet.</p>
         ) : (

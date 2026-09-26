@@ -31,15 +31,16 @@ function targetHref(notification: NotificationWithActor): string {
     return notification.conversation_id ? `/messages?c=${notification.conversation_id}` : "/messages";
   }
   if (notification.type === "vouch_approved" || notification.type === "vouch_declined" || notification.type === "promoted_to_leader") return "/profile";
-  // Unlike friends (no standalone page — the FriendsPanel already sits
-  // permanently in the home sidebar/drawer), family has its own /family page,
-  // so a family notification should land there instead of the actor's
-  // profile. ?requests=<id> opens the mobile drawer straight to the panel
-  // that has the pending/just-accepted request (see family-feed.tsx). Using
-  // the notification's own id (not a hardcoded literal) matters: every
-  // family notification would otherwise point at the exact same URL, so
-  // tapping a second one while already on /family from an earlier tap isn't
-  // a new navigation at all as far as the browser/router is concerned.
+  // Friends and family both have their own standalone pages, so a connection
+  // notification should land there instead of the actor's profile.
+  // ?requests=<id> opens the mobile drawer straight to the panel that has the
+  // pending/just-accepted request (see friends-feed.tsx / family-feed.tsx).
+  // Using the notification's own id (not a hardcoded literal) matters: every
+  // notification of the same type would otherwise point at the exact same
+  // URL, so tapping a second one while already on that page from an earlier
+  // tap isn't a new navigation at all as far as the browser/router is
+  // concerned.
+  if (notification.type === "friend_request" || notification.type === "friend_accept") return `/friends?requests=${notification.id}`;
   if (notification.type === "family_request" || notification.type === "family_accept") return `/family?requests=${notification.id}`;
   return notification.actor_username ? `/profile/${notification.actor_username}` : "/profile";
 }
