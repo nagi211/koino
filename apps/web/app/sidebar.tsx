@@ -95,12 +95,10 @@ function LogOutIcon() {
 
 export function Sidebar({
   profile,
-  onOpenFriends,
   onSayHello,
   unreadNotificationCount,
 }: {
   profile: Profile | null;
-  onOpenFriends: () => void;
   onSayHello: () => void;
   unreadNotificationCount: number;
 }) {
@@ -152,10 +150,10 @@ export function Sidebar({
               Say hello
             </button>
           )}
-          <button type="button" onClick={onOpenFriends} className={`${itemClass(false)} lg:hidden`}>
+          <Link href="/friends" className={`${itemClass(pathname === "/friends")} lg:hidden`}>
             <FriendsIcon />
             Friends
-          </button>
+          </Link>
           <Link href="/messages" className={itemClass(pathname === "/messages")}>
             <MessagesIcon />
             Messages
@@ -164,7 +162,7 @@ export function Sidebar({
             <UserIcon />
             Profile
           </Link>
-          <Link href="/family" className={itemClass(pathname === "/family")}>
+          <Link href="/family" className={`${itemClass(pathname === "/family")} lg:hidden`}>
             <FamilyIcon />
             Family
           </Link>

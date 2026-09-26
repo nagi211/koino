@@ -14,11 +14,9 @@ import { Avatar } from "./avatar";
 // with only the notification bell left as its own icon outside it.
 export function AccountMenu({
   profile,
-  onOpenFriends,
   onOpenVouchGate,
 }: {
   profile: Profile;
-  onOpenFriends: () => void;
   onOpenVouchGate: () => void;
 }) {
   const router = useRouter();
@@ -68,16 +66,9 @@ export function AccountMenu({
             <Link href="/profile" onClick={() => setOpen(false)} className={itemClass}>
               Profile
             </Link>
-            <button
-              type="button"
-              onClick={() => {
-                setOpen(false);
-                onOpenFriends();
-              }}
-              className={itemClass}
-            >
+            <Link href="/friends" onClick={() => setOpen(false)} className={itemClass}>
               Friends
-            </button>
+            </Link>
             <Link href="/messages" onClick={() => setOpen(false)} className={itemClass}>
               Messages
             </Link>

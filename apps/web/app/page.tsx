@@ -1,13 +1,11 @@
-import type { FriendshipStatus, FriendshipWithProfile } from "@koino/core";
+import type { FriendshipStatus } from "@koino/core";
 import {
   getActiveStories,
   getApprovedFeed,
-  getFriends,
   getMyFriendStatuses,
   getMyLikedPostIds,
   getMyProfile,
   getMySavedPostIds,
-  getPendingFriendRequests,
   getUnreadNotificationCount,
 } from "@koino/core";
 import { createClient } from "@/lib/supabase/server";
@@ -23,8 +21,6 @@ export default async function Home() {
 
   // Only depend on profile.id, not on posts/stories — fired as soon as
   // profile resolves instead of waiting on the other two as well.
-  const friendsPromise = profile ? getFriends(supabase, profile.id) : null;
-  const pendingRequestsPromise = profile ? getPendingFriendRequests(supabase, profile.id) : null;
   const unreadCountPromise = profile ? getUnreadNotificationCount(supabase, profile.id) : null;
 
   const [posts, stories] = await Promise.all([postsPromise, storiesPromise]);
@@ -35,17 +31,13 @@ export default async function Home() {
   let likedPostIds: string[] = [];
   let savedPostIds: string[] = [];
   let friendStatuses: Record<string, FriendshipStatus> = {};
-  let friends: FriendshipWithProfile[] = [];
-  let pendingRequests: FriendshipWithProfile[] = [];
   let unreadNotificationCount = 0;
 
   if (profile) {
-    [likedPostIds, savedPostIds, friendStatuses, friends, pendingRequests, unreadNotificationCount] = await Promise.all([
+    [likedPostIds, savedPostIds, friendStatuses, unreadNotificationCount] = await Promise.all([
       getMyLikedPostIds(supabase, profile.id, postIds).then((set) => Array.from(set)),
       getMySavedPostIds(supabase, profile.id, postIds).then((set) => Array.from(set)),
       getMyFriendStatuses(supabase, profile.id, authorIds),
-      friendsPromise!,
-      pendingRequestsPromise!,
       unreadCountPromise!,
     ]);
   }
@@ -57,8 +49,6 @@ export default async function Home() {
       likedPostIds={likedPostIds}
       savedPostIds={savedPostIds}
       friendStatuses={friendStatuses}
-      friends={friends}
-      pendingRequests={pendingRequests}
       stories={stories}
       unreadNotificationCount={unreadNotificationCount}
     />
