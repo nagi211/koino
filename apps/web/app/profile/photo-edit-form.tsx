@@ -178,7 +178,15 @@ export function PhotoEditForm({
       closeCropModal();
       router.refresh();
     } catch (err) {
+      // Setting this form's own error state isn't enough on its own — the crop
+      // modal is still open on top of this form when a failure happens here,
+      // so that message renders completely hidden behind it. Re-throwing lets
+      // AvatarCropModal's own catch (still visible, since it's the modal the
+      // user is actually looking at) show it too — that's what makes a failed
+      // upload look like "Saving… then silently reverts to Use photo" instead
+      // of surfacing whatever actually went wrong.
       setError(err instanceof Error ? err.message : "Upload failed");
+      throw err;
     } finally {
       setUploadingAvatar(false);
     }
