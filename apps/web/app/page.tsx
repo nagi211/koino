@@ -1,7 +1,9 @@
-import type { FriendshipStatus } from "@koino/core";
+import type { FamilyConnectionWithProfile, FriendshipStatus, FriendshipWithProfile } from "@koino/core";
 import {
   getActiveStories,
   getApprovedFeed,
+  getFamily,
+  getFriends,
   getMyFriendStatuses,
   getMyLikedPostIds,
   getMyProfile,
@@ -22,6 +24,8 @@ export default async function Home() {
   // Only depend on profile.id, not on posts/stories — fired as soon as
   // profile resolves instead of waiting on the other two as well.
   const unreadCountPromise = profile ? getUnreadNotificationCount(supabase, profile.id) : null;
+  const friendsPromise = profile ? getFriends(supabase, profile.id) : null;
+  const familyPromise = profile ? getFamily(supabase, profile.id) : null;
 
   const [posts, stories] = await Promise.all([postsPromise, storiesPromise]);
 
@@ -31,13 +35,17 @@ export default async function Home() {
   let likedPostIds: string[] = [];
   let savedPostIds: string[] = [];
   let friendStatuses: Record<string, FriendshipStatus> = {};
+  let friends: FriendshipWithProfile[] = [];
+  let family: FamilyConnectionWithProfile[] = [];
   let unreadNotificationCount = 0;
 
   if (profile) {
-    [likedPostIds, savedPostIds, friendStatuses, unreadNotificationCount] = await Promise.all([
+    [likedPostIds, savedPostIds, friendStatuses, friends, family, unreadNotificationCount] = await Promise.all([
       getMyLikedPostIds(supabase, profile.id, postIds).then((set) => Array.from(set)),
       getMySavedPostIds(supabase, profile.id, postIds).then((set) => Array.from(set)),
       getMyFriendStatuses(supabase, profile.id, authorIds),
+      friendsPromise!,
+      familyPromise!,
       unreadCountPromise!,
     ]);
   }
@@ -49,6 +57,8 @@ export default async function Home() {
       likedPostIds={likedPostIds}
       savedPostIds={savedPostIds}
       friendStatuses={friendStatuses}
+      friends={friends}
+      family={family}
       stories={stories}
       unreadNotificationCount={unreadNotificationCount}
     />
