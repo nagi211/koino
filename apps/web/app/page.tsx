@@ -8,6 +8,7 @@ import {
   getMyLikedPostIds,
   getMyProfile,
   getMySavedPostIds,
+  getUnreadMessageCount,
   getUnreadNotificationCount,
 } from "@koino/core";
 import { createClient } from "@/lib/supabase/server";
@@ -24,6 +25,7 @@ export default async function Home() {
   // Only depend on profile.id, not on posts/stories — fired as soon as
   // profile resolves instead of waiting on the other two as well.
   const unreadCountPromise = profile ? getUnreadNotificationCount(supabase, profile.id) : null;
+  const unreadMessageCountPromise = profile ? getUnreadMessageCount(supabase, profile.id) : null;
   const friendsPromise = profile ? getFriends(supabase, profile.id) : null;
   const familyPromise = profile ? getFamily(supabase, profile.id) : null;
 
@@ -38,15 +40,17 @@ export default async function Home() {
   let friends: FriendshipWithProfile[] = [];
   let family: FamilyConnectionWithProfile[] = [];
   let unreadNotificationCount = 0;
+  let unreadMessageCount = 0;
 
   if (profile) {
-    [likedPostIds, savedPostIds, friendStatuses, friends, family, unreadNotificationCount] = await Promise.all([
+    [likedPostIds, savedPostIds, friendStatuses, friends, family, unreadNotificationCount, unreadMessageCount] = await Promise.all([
       getMyLikedPostIds(supabase, profile.id, postIds).then((set) => Array.from(set)),
       getMySavedPostIds(supabase, profile.id, postIds).then((set) => Array.from(set)),
       getMyFriendStatuses(supabase, profile.id, authorIds),
       friendsPromise!,
       familyPromise!,
       unreadCountPromise!,
+      unreadMessageCountPromise!,
     ]);
   }
 
@@ -61,6 +65,7 @@ export default async function Home() {
       family={family}
       stories={stories}
       unreadNotificationCount={unreadNotificationCount}
+      unreadMessageCount={unreadMessageCount}
     />
   );
 }

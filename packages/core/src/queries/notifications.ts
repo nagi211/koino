@@ -1,13 +1,35 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Notification, NotificationWithActor } from "../types";
 
-/** Used by every server component that renders a notification bell. */
+// new_message/vouch_claimed both mean "go look at a conversation" — surfaced
+// instead as an unread count on the Messages link/avatar (see
+// getUnreadMessageCount below), not in the general notification bell, so
+// every notifications-table query here excludes them from the bell's side
+// and a parallel pair of functions covers the messages side with the same
+// read_at column as the source of truth (no separate conversation-read-state
+// exists — see MESSAGE_NOTIFICATION_TYPES usages).
+const MESSAGE_NOTIFICATION_TYPES = ["new_message", "vouch_claimed"] as const;
+
+/** Used by every server component that renders a notification bell. Excludes message-related types — see getUnreadMessageCount. */
 export async function getUnreadNotificationCount(client: SupabaseClient<Database>, profileId: string): Promise<number> {
   const { count, error } = await client
     .from("notifications")
     .select("*", { count: "exact", head: true })
     .eq("recipient_id", profileId)
-    .is("read_at", null);
+    .is("read_at", null)
+    .not("type", "in", `(${MESSAGE_NOTIFICATION_TYPES.join(",")})`);
+  if (error) throw error;
+  return count ?? 0;
+}
+
+/** Drives the red badge on the Messages link/avatar instead of the bell. */
+export async function getUnreadMessageCount(client: SupabaseClient<Database>, profileId: string): Promise<number> {
+  const { count, error } = await client
+    .from("notifications")
+    .select("*", { count: "exact", head: true })
+    .eq("recipient_id", profileId)
+    .is("read_at", null)
+    .in("type", MESSAGE_NOTIFICATION_TYPES);
   if (error) throw error;
   return count ?? 0;
 }
@@ -21,6 +43,7 @@ export async function listNotifications(
     .from("notifications")
     .select("*, actor:profiles!notifications_actor_id_fkey(username, avatar_url)")
     .eq("recipient_id", profileId)
+    .not("type", "in", `(${MESSAGE_NOTIFICATION_TYPES.join(",")})`)
     .order("created_at", { ascending: false })
     .limit(limit);
   if (error) throw error;
@@ -33,12 +56,25 @@ export async function listNotifications(
   }));
 }
 
+/** Only the types the bell shows — leaves message-type notifications alone so opening the bell doesn't silently clear the (unrelated) messages badge. */
 export async function markAllNotificationsRead(client: SupabaseClient<Database>, profileId: string) {
   const { error } = await client
     .from("notifications")
     .update({ read_at: new Date().toISOString() })
     .eq("recipient_id", profileId)
-    .is("read_at", null);
+    .is("read_at", null)
+    .not("type", "in", `(${MESSAGE_NOTIFICATION_TYPES.join(",")})`);
+  if (error) throw error;
+}
+
+/** Called when the messages page loads — mirrors the bell's own "mark read on open". */
+export async function markMessageNotificationsRead(client: SupabaseClient<Database>, profileId: string) {
+  const { error } = await client
+    .from("notifications")
+    .update({ read_at: new Date().toISOString() })
+    .eq("recipient_id", profileId)
+    .is("read_at", null)
+    .in("type", MESSAGE_NOTIFICATION_TYPES);
   if (error) throw error;
 }
 

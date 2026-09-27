@@ -16,6 +16,7 @@ export function AppShell({
   family,
   stories,
   unreadNotificationCount,
+  unreadMessageCount,
 }: {
   profile: Profile | null;
   posts: PostWithAuthor[];
@@ -26,6 +27,7 @@ export function AppShell({
   family: FamilyConnectionWithProfile[];
   stories: StoryWithAuthor[];
   unreadNotificationCount: number;
+  unreadMessageCount: number;
 }) {
   // Lifted out of Feed so the sidebar's own "Say hello" entry can open the same
   // dialog — a guest who dismissed the feed's inline banner still needs a
@@ -46,7 +48,12 @@ export function AppShell({
 
   return (
     <div className="fixed inset-0 flex">
-      <Sidebar profile={profile} onSayHello={openVouchGate} unreadNotificationCount={unreadNotificationCount} />
+      <Sidebar
+        profile={profile}
+        onSayHello={openVouchGate}
+        unreadNotificationCount={unreadNotificationCount}
+        unreadMessageCount={unreadMessageCount}
+      />
 
       <Feed
         initialPosts={posts}
@@ -56,6 +63,7 @@ export function AppShell({
         friendStatuses={friendStatuses}
         stories={stories}
         unreadNotificationCount={unreadNotificationCount}
+        unreadMessageCount={unreadMessageCount}
         vouchGateOpen={vouchGateOpen}
         onOpenVouchGate={openVouchGate}
         onCloseVouchGate={closeVouchGate}

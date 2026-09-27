@@ -7,6 +7,7 @@ import { signOut } from "@koino/core";
 import type { Profile } from "@koino/core";
 import { createClient } from "@/lib/supabase/client";
 import { Avatar } from "./avatar";
+import { useUnreadMessageCount } from "./use-unread-message-count";
 
 // Everything the left sidebar offers from md: up (see sidebar.tsx) — this menu
 // is the mobile/tablet stand-in for that whole panel below lg:, so it carries
@@ -14,12 +15,15 @@ import { Avatar } from "./avatar";
 // with only the notification bell left as its own icon outside it.
 export function AccountMenu({
   profile,
+  unreadMessageCount: initialUnreadMessageCount,
   onOpenVouchGate,
 }: {
   profile: Profile;
+  unreadMessageCount: number;
   onOpenVouchGate: () => void;
 }) {
   const router = useRouter();
+  const unreadMessageCount = useUnreadMessageCount(profile, initialUnreadMessageCount);
   const [open, setOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [isRefreshing, startLogoutTransition] = useTransition();
@@ -54,8 +58,11 @@ export function AccountMenu({
 
   return (
     <div className="relative shrink-0">
-      <button type="button" onClick={() => setOpen((o) => !o)} aria-label="Account menu">
+      <button type="button" onClick={() => setOpen((o) => !o)} aria-label="Account menu" className="relative">
         <Avatar url={profile.avatar_url} username={profile.username} size={36} />
+        {unreadMessageCount > 0 && (
+          <span className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full bg-danger ring-2 ring-background" />
+        )}
       </button>
 
       {open && (
@@ -69,8 +76,17 @@ export function AccountMenu({
             <Link href="/friends" onClick={() => setOpen(false)} className={itemClass}>
               Friends
             </Link>
-            <Link href="/messages" onClick={() => setOpen(false)} className={itemClass}>
+            <Link
+              href="/messages"
+              onClick={() => setOpen(false)}
+              className="flex w-full items-center justify-between px-4 py-2 text-left text-sm text-foreground hover:bg-input"
+            >
               Messages
+              {unreadMessageCount > 0 && (
+                <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-medium leading-none text-white">
+                  {unreadMessageCount > 9 ? "9+" : unreadMessageCount}
+                </span>
+              )}
             </Link>
             <Link href="/family" onClick={() => setOpen(false)} className={itemClass}>
               Family

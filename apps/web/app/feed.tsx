@@ -22,6 +22,7 @@ export function Feed({
   friendStatuses,
   stories,
   unreadNotificationCount,
+  unreadMessageCount,
   vouchGateOpen,
   onOpenVouchGate,
   onCloseVouchGate,
@@ -34,6 +35,7 @@ export function Feed({
   friendStatuses: Record<string, FriendshipStatus>;
   stories: StoryWithAuthor[];
   unreadNotificationCount: number;
+  unreadMessageCount: number;
   vouchGateOpen: boolean;
   onOpenVouchGate: () => void;
   onCloseVouchGate: () => void;
@@ -92,7 +94,7 @@ export function Feed({
             {/* Account avatar: only the right-side ProfileCard (lg:block) replaces this,
                 so it needs to stay up through the md-lg gap where that panel is still hidden. */}
             <div className="lg:hidden">
-              <AccountMenu profile={profile} onOpenVouchGate={onOpenVouchGate} />
+              <AccountMenu profile={profile} unreadMessageCount={unreadMessageCount} onOpenVouchGate={onOpenVouchGate} />
             </div>
           </div>
         ) : (

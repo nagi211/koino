@@ -7,6 +7,7 @@ import { signOut } from "@koino/core";
 import type { Profile } from "@koino/core";
 import { createClient } from "@/lib/supabase/client";
 import { NotificationBell } from "./notification-bell";
+import { useUnreadMessageCount } from "./use-unread-message-count";
 
 function HomeIcon() {
   return (
@@ -93,14 +94,47 @@ function LogOutIcon() {
   );
 }
 
+// Split out so useUnreadMessageCount (which needs a non-null Profile) can be
+// called unconditionally — this only ever mounts inside the `{profile && ...}`
+// block below, where that's already guaranteed.
+function MessagesLink({
+  profile,
+  initialUnreadMessageCount,
+  active,
+  itemClass,
+}: {
+  profile: Profile;
+  initialUnreadMessageCount: number;
+  active: boolean;
+  itemClass: (active: boolean) => string;
+}) {
+  const unreadMessageCount = useUnreadMessageCount(profile, initialUnreadMessageCount);
+
+  return (
+    <Link href="/messages" className={`relative ${itemClass(active)}`}>
+      <span className="relative">
+        <MessagesIcon />
+        {unreadMessageCount > 0 && (
+          <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-medium leading-none text-white">
+            {unreadMessageCount > 9 ? "9+" : unreadMessageCount}
+          </span>
+        )}
+      </span>
+      Messages
+    </Link>
+  );
+}
+
 export function Sidebar({
   profile,
   onSayHello,
   unreadNotificationCount,
+  unreadMessageCount,
 }: {
   profile: Profile | null;
   onSayHello: () => void;
   unreadNotificationCount: number;
+  unreadMessageCount: number;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -154,10 +188,12 @@ export function Sidebar({
             <FriendsIcon />
             Friends
           </Link>
-          <Link href="/messages" className={itemClass(pathname === "/messages")}>
-            <MessagesIcon />
-            Messages
-          </Link>
+          <MessagesLink
+            profile={profile}
+            initialUnreadMessageCount={unreadMessageCount}
+            active={pathname === "/messages"}
+            itemClass={itemClass}
+          />
           <Link href="/profile" className={itemClass(pathname === "/profile")}>
             <UserIcon />
             Profile
