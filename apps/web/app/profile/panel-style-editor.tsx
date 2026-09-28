@@ -67,7 +67,7 @@ function SliderField({
   onChange: (value: number) => void;
 }) {
   return (
-    <label className="flex items-center gap-3 text-sm">
+    <label className="flex flex-wrap items-center gap-3 text-sm">
       <span className="w-32 shrink-0 text-muted">{label}</span>
       <input
         type="range"
@@ -76,7 +76,7 @@ function SliderField({
         step={1}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="flex-1 accent-olive-dark"
+        className="min-w-[100px] flex-1 accent-olive-dark"
       />
       <span className="w-10 shrink-0 text-right text-xs text-muted">
         {value}

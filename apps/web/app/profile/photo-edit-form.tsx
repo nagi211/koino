@@ -452,7 +452,7 @@ export function PhotoEditForm({
             </div>
           </div>
 
-          <label className="flex items-center gap-3 text-sm">
+          <label className="flex flex-wrap items-center gap-3 text-sm">
             <span className="w-20 shrink-0 text-muted">Avatar size</span>
             <input
               type="range"
@@ -461,13 +461,13 @@ export function PhotoEditForm({
               step={1}
               value={photoSettings.avatarSize}
               onChange={(e) => setPhotoSettings((prev) => ({ ...prev, avatarSize: Number(e.target.value) }))}
-              className="flex-1 accent-olive-dark"
+              className="min-w-[100px] flex-1 accent-olive-dark"
             />
             <span className="w-10 shrink-0 text-right text-xs text-muted">{photoSettings.avatarSize}px</span>
           </label>
 
           {photoSettings.avatarShape === "square" && (
-            <label className="flex items-center gap-3 text-sm">
+            <label className="flex flex-wrap items-center gap-3 text-sm">
               <span className="w-20 shrink-0 text-muted">Corner radius</span>
               <input
                 type="range"
@@ -476,13 +476,13 @@ export function PhotoEditForm({
                 step={1}
                 value={photoSettings.avatarCornerRadius}
                 onChange={(e) => setPhotoSettings((prev) => ({ ...prev, avatarCornerRadius: Number(e.target.value) }))}
-                className="flex-1 accent-olive-dark"
+                className="min-w-[100px] flex-1 accent-olive-dark"
               />
               <span className="w-10 shrink-0 text-right text-xs text-muted">{photoSettings.avatarCornerRadius}%</span>
             </label>
           )}
 
-          <label className="flex items-center gap-3 text-sm">
+          <label className="flex flex-wrap items-center gap-3 text-sm">
             <span className="w-20 shrink-0 text-muted">Border size</span>
             <input
               type="range"
@@ -491,7 +491,7 @@ export function PhotoEditForm({
               step={1}
               value={photoSettings.avatarBorderWidth}
               onChange={(e) => setPhotoSettings((prev) => ({ ...prev, avatarBorderWidth: Number(e.target.value) }))}
-              className="flex-1 accent-olive-dark"
+              className="min-w-[100px] flex-1 accent-olive-dark"
             />
             <span className="w-10 shrink-0 text-right text-xs text-muted">{photoSettings.avatarBorderWidth}px</span>
             <input
@@ -530,9 +530,26 @@ export function PhotoEditForm({
               const colorOverride = photoSettings.textColors[key];
               const warning = textColorWarning(colorOverride);
               return (
-                <div key={key} className="flex flex-col gap-1">
-                  <label className="flex items-center gap-3 text-sm">
-                    <span className="w-40 shrink-0 text-muted">{label}</span>
+                <div key={key} className="flex flex-col gap-2 rounded-xl border border-card-border p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-sm text-foreground">{label}</span>
+                    <label className="flex shrink-0 items-center gap-2 text-xs text-muted">
+                      <input
+                        type="checkbox"
+                        checked={!photoSettings.textVisibility[key]}
+                        onChange={(e) =>
+                          setPhotoSettings((prev) => ({
+                            ...prev,
+                            textVisibility: { ...prev.textVisibility, [key]: !e.target.checked },
+                          }))
+                        }
+                        aria-label={`Hide ${label}`}
+                        className="h-4 w-4 accent-olive-dark"
+                      />
+                      Hide
+                    </label>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3 text-sm">
                     <input
                       type="range"
                       min={10}
@@ -545,7 +562,7 @@ export function PhotoEditForm({
                           textSizes: { ...prev.textSizes, [key]: Number(e.target.value) },
                         }))
                       }
-                      className="flex-1 accent-olive-dark"
+                      className="min-w-[100px] flex-1 accent-olive-dark"
                     />
                     <span className="w-10 shrink-0 text-right text-xs text-muted">{photoSettings.textSizes[key]}px</span>
                     <input
@@ -571,22 +588,8 @@ export function PhotoEditForm({
                     >
                       Auto
                     </button>
-                    <input
-                      type="checkbox"
-                      checked={!photoSettings.textVisibility[key]}
-                      onChange={(e) =>
-                        setPhotoSettings((prev) => ({
-                          ...prev,
-                          textVisibility: { ...prev.textVisibility, [key]: !e.target.checked },
-                        }))
-                      }
-                      aria-label={`Hide ${label}`}
-                      title={`Hide ${label}`}
-                      className="h-4 w-4 shrink-0 accent-olive-dark"
-                    />
-                    <span className="shrink-0 text-xs text-muted">Hide</span>
-                  </label>
-                  {warning && <p className="pl-[172px] text-xs text-danger">{warning}</p>}
+                  </div>
+                  {warning && <p className="text-xs text-danger">{warning}</p>}
                 </div>
               );
             })}
