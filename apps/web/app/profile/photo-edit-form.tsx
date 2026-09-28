@@ -532,7 +532,7 @@ export function PhotoEditForm({
               return (
                 <div key={key} className="flex flex-col gap-2 rounded-xl border border-card-border p-3">
                   <div className="flex items-center justify-between gap-3">
-                    <span className="text-sm text-foreground">{label}</span>
+                    <span className="min-w-0 text-sm text-foreground">{label}</span>
                     <label className="flex shrink-0 items-center gap-2 text-xs text-muted">
                       <input
                         type="checkbox"
