@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   acceptFamilyRequest,
   FAMILY_RELATIONSHIP_OPTIONS,
@@ -32,6 +33,7 @@ export function FamilyPanel({
   const [requests, setRequests] = useState(initialRequests);
   const [pickingFor, setPickingFor] = useState<string | null>(null);
   const [relationship, setRelationship] = useState<FamilyRelationship>("cousin");
+  const router = useRouter();
 
   async function handleSearch(q: string) {
     setQuery(q);
@@ -61,11 +63,19 @@ export function FamilyPanel({
     }
   }
 
+  // Each of these also calls router.refresh() on success — this panel gets
+  // fully unmounted when the mobile drawer closes (see family-feed.tsx),
+  // and remounts fresh from its initialFamily/initialRequests props, which
+  // otherwise stayed exactly as they were at the last full page load. Without
+  // this, accepting a request here, closing the drawer, and reopening it
+  // showed the same request as still pending — the optimistic update never
+  // reached the server-rendered props feeding the next mount.
   async function handleAccept(req: FamilyConnectionWithProfile) {
     setRequests((prev) => prev.filter((r) => r.connection_id !== req.connection_id));
     setFamily((prev) => [...prev, req]);
     try {
       await acceptFamilyRequest(createClient(), req.connection_id);
+      router.refresh();
     } catch {
       // best-effort optimistic update; a reload will resync if this failed
     }
@@ -75,6 +85,7 @@ export function FamilyPanel({
     setRequests((prev) => prev.filter((r) => r.connection_id !== connectionId));
     try {
       await removeFamilyConnection(createClient(), connectionId);
+      router.refresh();
     } catch {
       // best-effort
     }
@@ -84,6 +95,7 @@ export function FamilyPanel({
     setFamily((prev) => prev.filter((f) => f.connection_id !== connectionId));
     try {
       await removeFamilyConnection(createClient(), connectionId);
+      router.refresh();
     } catch {
       // best-effort
     }

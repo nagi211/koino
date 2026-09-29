@@ -63,11 +63,18 @@ export function FriendsPanel({
     }
   }
 
+  // Both also call router.refresh() on success — this panel (on the home
+  // page) unmounts and remounts across some navigations from its
+  // initialFriends/initialRequests props, which otherwise stayed exactly as
+  // they were at the last full page load. Without this, accepting a request
+  // here and coming back to it later could show the same request as still
+  // pending — see the identical fix in family-panel.tsx for the fuller story.
   async function handleAccept(friendshipId: string, requesterProfile: Profile) {
     setRequests((prev) => prev.filter((req) => req.friendship_id !== friendshipId));
     setFriends((prev) => [...prev, { friendship_id: friendshipId, profile: requesterProfile }]);
     try {
       await acceptFriendRequest(createClient(), friendshipId);
+      router.refresh();
     } catch {
       // best-effort optimistic update; a reload will resync if this failed
     }
@@ -77,6 +84,7 @@ export function FriendsPanel({
     setRequests((prev) => prev.filter((req) => req.friendship_id !== friendshipId));
     try {
       await removeFriendship(createClient(), friendshipId);
+      router.refresh();
     } catch {
       // best-effort
     }
