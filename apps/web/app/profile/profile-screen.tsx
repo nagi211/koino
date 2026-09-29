@@ -264,7 +264,10 @@ export function ProfileScreen({
               <p className="text-sm opacity-70">No posts yet.</p>
             )}
           </div>
-          {isSelf && (
+          {/* Suspension revokes posting entirely, same as everywhere else — no
+              audience would actually accept a post from a suspended member,
+              so there's nothing useful this button could open. */}
+          {isSelf && viewer && viewer.status !== "suspended" && (
             <button
               type="button"
               onClick={() => setComposerOpen(true)}
@@ -619,7 +622,16 @@ export function ProfileScreen({
           >
             <PageBackgroundForm profile={target} onSaved={() => setEditingPageBackground(false)} onDirtyChange={setPageBackgroundDirty} />
           </Modal>
-          <PostComposer open={composerOpen} onClose={() => setComposerOpen(false)} authorId={viewer.id} />
+          {/* Public/friends both need status='active' at the RLS layer; family
+              only needs non-suspended (guests included — see 0032/0036), so a
+              still-pending guest only gets offered that one instead of
+              opening the composer to an audience that's just going to fail. */}
+          <PostComposer
+            open={composerOpen}
+            onClose={() => setComposerOpen(false)}
+            authorId={viewer.id}
+            audienceOptions={viewer.status === "active" ? ["public", "family", "friends"] : ["family"]}
+          />
         </>
       )}
       {viewer && <VouchGateModal open={vouchGateOpen} onClose={() => setVouchGateOpen(false)} guestId={viewer.id} />}

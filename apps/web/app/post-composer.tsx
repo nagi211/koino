@@ -12,16 +12,31 @@ type PostType = "text" | "image" | "video";
 const textareaClasses =
   "w-full rounded-xl border border-card-border bg-input px-4 py-3 text-foreground placeholder:text-muted outline-none transition focus:border-olive-dark focus:ring-2 focus:ring-olive/50";
 
+const AUDIENCE_LABELS: Record<PostAudience, string> = {
+  public: "Public",
+  family: "Family",
+  friends: "Friends",
+};
+
 export function PostComposer({
   open,
   onClose,
   authorId,
   audience = "public",
+  audienceOptions,
 }: {
   open: boolean;
   onClose: () => void;
   authorId: string;
+  /** Fixed audience for callers that already imply one by the page they're on
+   * (e.g. /family, /friends) — ignored when audienceOptions is given. */
   audience?: PostAudience;
+  /** Lets the poster pick, instead of a fixed audience — for a context like
+   * the profile page where none is implied by the page itself. Only offer
+   * values the caller has already confirmed this poster is actually allowed
+   * to use (RLS still enforces it either way, but there's no reason to offer
+   * a choice that's just going to fail). */
+  audienceOptions?: PostAudience[];
 }) {
   const router = useRouter();
   const [type, setType] = useState<PostType>("text");
@@ -32,6 +47,8 @@ export function PostComposer({
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [done, setDone] = useState(false);
+  const [selectedAudience, setSelectedAudience] = useState<PostAudience>(audienceOptions?.[0] ?? audience);
+  const activeAudience = audienceOptions ? selectedAudience : audience;
 
   function reset() {
     setType("text");
@@ -41,6 +58,7 @@ export function PostComposer({
     setPreviewUrl(null);
     setError(null);
     setDone(false);
+    setSelectedAudience(audienceOptions?.[0] ?? audience);
   }
 
   function handleClose() {
@@ -89,7 +107,7 @@ export function PostComposer({
       body: body || undefined,
       media_url,
       background: type === "text" ? background ?? undefined : undefined,
-      audience,
+      audience: activeAudience,
     });
     if (!parsed.success) {
       setError(parsed.error.issues[0]?.message ?? "Invalid post");
@@ -130,6 +148,28 @@ export function PostComposer({
               </button>
             ))}
           </div>
+
+          {audienceOptions && audienceOptions.length > 1 && (
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-muted">Who can see this</span>
+              <div className="flex flex-wrap gap-2">
+                {audienceOptions.map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => setSelectedAudience(option)}
+                    className={`rounded-full border px-3 py-1.5 text-sm ${
+                      selectedAudience === option
+                        ? "border-olive-dark bg-input text-foreground"
+                        : "border-card-border text-muted hover:text-foreground"
+                    }`}
+                  >
+                    {AUDIENCE_LABELS[option]}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {type === "text" ? (
             <>
