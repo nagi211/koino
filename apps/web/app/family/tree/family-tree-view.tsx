@@ -131,6 +131,42 @@ function layoutTree(viewerId: string, edges: FamilyTreeEdge[]) {
     children.get(p)!.push(id);
   }
 
+  // A spouse should sit right next to their partner, not wherever the
+  // leaf-weighted tidy-tree slice happens to land them. A spouse with no
+  // separately-connected ancestors of their own inherits their partner's
+  // slice-parent through the peer-resolution above (or is a root alongside
+  // them, if the partner has none either) — either way they end up in the
+  // same array as their partner, just in arbitrary BFS-visit order.
+  // assignSlot divides a parent's (or the whole tree's) slot range in array
+  // order, so reordering each array to put spouse pairs next to each other
+  // is enough to get them adjacent in the final x-position too, without
+  // touching the width/slicing math itself.
+  const spouseOf = new Map<string, string>();
+  for (const edge of edges) {
+    if (edge.relationship === "spouse") {
+      spouseOf.set(edge.person_a, edge.person_b);
+      spouseOf.set(edge.person_b, edge.person_a);
+    }
+  }
+  function withSpousesAdjacent(ids: string[]): string[] {
+    const reordered: string[] = [];
+    const remaining = new Set(ids);
+    for (const id of ids) {
+      if (!remaining.has(id)) continue;
+      reordered.push(id);
+      remaining.delete(id);
+      const spouseId = spouseOf.get(id);
+      if (spouseId && remaining.has(spouseId)) {
+        reordered.push(spouseId);
+        remaining.delete(spouseId);
+      }
+    }
+    return reordered;
+  }
+  for (const [parentId, kids] of children) {
+    children.set(parentId, withSpousesAdjacent(kids));
+  }
+
   const leafCountCache = new Map<string, number>();
   function leafCount(id: string): number {
     const cached = leafCountCache.get(id);
@@ -154,7 +190,10 @@ function layoutTree(viewerId: string, edges: FamilyTreeEdge[]) {
       cursor += width;
     }
   }
-  const roots = Array.from(visited).filter((id) => sliceParent.get(id) === null);
+  // Same adjacency reordering as above, for the case where neither spouse has
+  // any connected ancestors yet — they're both roots instead of siblings
+  // under a shared parent, but the same fix applies the same way.
+  const roots = withSpousesAdjacent(Array.from(visited).filter((id) => sliceParent.get(id) === null));
   const totalWidth = roots.reduce((sum, root) => sum + leafCount(root), 0);
   let rootCursor = 0;
   for (const root of roots) {
@@ -284,12 +323,19 @@ export function FamilyTreeView({ viewer, edges, profiles }: { viewer: Profile; e
                     {edges.map((edge) => {
                       const g = geometry(edge);
                       if (!g) return null;
+                      // A spouse line reads as "married into the family," not
+                      // "same generic same-generation relationship as a
+                      // sibling or cousin" — the plain gray line both of
+                      // those share was exactly why a spouse looked like a
+                      // sibling at a glance. Accent-colored and heavier here
+                      // is the one deliberately different case.
+                      const isSpouse = edge.relationship === "spouse";
                       return (
                         <path
                           key={edge.connection_id}
                           d={g.path}
-                          className="stroke-card-border"
-                          strokeWidth={1.5}
+                          className={isSpouse ? "stroke-olive-dark" : "stroke-card-border"}
+                          strokeWidth={isSpouse ? 2.5 : 1.5}
                           fill="none"
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -301,10 +347,13 @@ export function FamilyTreeView({ viewer, edges, profiles }: { viewer: Profile; e
                   {edges.map((edge) => {
                     const g = geometry(edge);
                     if (!g) return null;
+                    const isSpouse = edge.relationship === "spouse";
                     return (
                       <span
                         key={edge.connection_id}
-                        className="absolute -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full border border-card-border bg-background px-2 py-0.5 text-[9px] font-medium uppercase tracking-wide text-muted"
+                        className={`absolute -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full border bg-background px-2 py-0.5 text-[9px] font-medium uppercase tracking-wide ${
+                          isSpouse ? "border-olive-dark text-olive-dark" : "border-card-border text-muted"
+                        }`}
                         style={{ left: g.labelX, top: g.labelY }}
                       >
                         {FAMILY_RELATIONSHIP_LABEL[edge.relationship]}
