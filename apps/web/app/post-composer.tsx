@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createPost, createPostSchema, POST_BACKGROUNDS, type PostAudience, type PostBackground } from "@koino/core";
+import { createPost, createPostSchema, POST_BACKGROUNDS, POST_TEXT_SIZE_RANGE, type PostAudience, type PostBackground } from "@koino/core";
 import { createClient } from "@/lib/supabase/client";
 import { Modal } from "./modal";
 import { BACKGROUND_STYLES } from "./post-backgrounds";
@@ -17,6 +17,10 @@ const AUDIENCE_LABELS: Record<PostAudience, string> = {
   family: "Family",
   friends: "Friends",
 };
+
+// Splits the difference between the old fixed text-2xl/text-3xl (24-30px)
+// a colored-background post always rendered at before this control existed.
+const DEFAULT_POST_TEXT_SIZE = 28;
 
 export function PostComposer({
   open,
@@ -42,6 +46,7 @@ export function PostComposer({
   const [type, setType] = useState<PostType>("text");
   const [body, setBody] = useState("");
   const [background, setBackground] = useState<PostBackground | null>(null);
+  const [textSize, setTextSize] = useState(DEFAULT_POST_TEXT_SIZE);
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -54,6 +59,7 @@ export function PostComposer({
     setType("text");
     setBody("");
     setBackground(null);
+    setTextSize(DEFAULT_POST_TEXT_SIZE);
     setFile(null);
     setPreviewUrl(null);
     setError(null);
@@ -107,6 +113,7 @@ export function PostComposer({
       body: body || undefined,
       media_url,
       background: type === "text" ? background ?? undefined : undefined,
+      text_size: type === "text" && background ? textSize : undefined,
       audience: activeAudience,
     });
     if (!parsed.success) {
@@ -176,9 +183,10 @@ export function PostComposer({
               <textarea
                 className={
                   background
-                    ? `w-full rounded-xl bg-gradient-to-br px-4 py-10 text-center text-lg font-medium text-white placeholder:text-white/70 outline-none ${BACKGROUND_STYLES[background].gradient}`
+                    ? `w-full rounded-xl bg-gradient-to-br px-4 py-10 text-center font-medium text-white placeholder:text-white/70 outline-none ${BACKGROUND_STYLES[background].gradient}`
                     : textareaClasses
                 }
+                style={background ? { fontSize: textSize } : undefined}
                 placeholder="Share something encouraging…"
                 rows={background ? 5 : 4}
                 value={body}
@@ -205,6 +213,21 @@ export function PostComposer({
                   />
                 ))}
               </div>
+              {background && (
+                <label className="flex items-center gap-3 text-sm">
+                  <span className="w-16 shrink-0 text-muted">Text size</span>
+                  <input
+                    type="range"
+                    min={POST_TEXT_SIZE_RANGE.min}
+                    max={POST_TEXT_SIZE_RANGE.max}
+                    step={1}
+                    value={textSize}
+                    onChange={(e) => setTextSize(Number(e.target.value))}
+                    className="min-w-[100px] flex-1 accent-olive-dark"
+                  />
+                  <span className="w-10 shrink-0 text-right text-xs text-muted">{textSize}px</span>
+                </label>
+              )}
             </>
           ) : (
             <>

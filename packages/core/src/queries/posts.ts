@@ -150,6 +150,7 @@ export async function createPost(client: SupabaseClient<Database>, authorId: str
       body: input.body ?? null,
       media_url: input.media_url ?? null,
       background: input.background ?? null,
+      text_size: input.text_size ?? null,
       audience: input.audience,
     })
     .select()

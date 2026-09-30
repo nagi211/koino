@@ -215,6 +215,9 @@ export type Post = {
   body: string | null;
   media_url: string | null;
   background: string | null;
+  // Only meaningful alongside `background` (a colored text post) — null falls
+  // back to the fixed size every such post used before this existed.
+  text_size: number | null;
   status: PostStatus;
   audience: PostAudience;
   ai_flag_reason: string | null;

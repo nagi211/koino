@@ -55,9 +55,10 @@ export function PostCard({
             <p
               className={
                 bg
-                  ? "w-full whitespace-pre-wrap text-center font-serif text-2xl font-medium text-white sm:text-3xl"
+                  ? `w-full whitespace-pre-wrap text-center font-serif font-medium text-white ${post.text_size ? "" : "text-2xl sm:text-3xl"}`
                   : "w-full whitespace-pre-wrap font-serif text-xl text-foreground"
               }
+              style={bg && post.text_size ? { fontSize: post.text_size } : undefined}
             >
               {post.body}
             </p>

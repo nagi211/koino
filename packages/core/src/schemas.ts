@@ -21,12 +21,19 @@ export type SignInInput = z.infer<typeof signInSchema>;
 export const POST_BACKGROUNDS = ["sunrise", "ocean", "meadow", "berry", "dusk"] as const;
 export type PostBackground = (typeof POST_BACKGROUNDS)[number];
 
+// Same floor/ceiling reasoning as a colored-background post's fixed sizes
+// before this existed (text-2xl/text-3xl, ~24-30px) — wide enough either
+// side of that to be a real choice, not so wide the text overflows a small
+// screen or shrinks to unreadable.
+export const POST_TEXT_SIZE_RANGE = { min: 18, max: 48 } as const;
+
 export const createPostSchema = z
   .object({
     type: z.enum(["text", "image", "video"]),
     body: z.string().max(2000).optional(),
     media_url: z.string().url().optional(),
     background: z.enum(POST_BACKGROUNDS).optional(),
+    text_size: z.number().int().min(POST_TEXT_SIZE_RANGE.min).max(POST_TEXT_SIZE_RANGE.max).optional(),
     audience: z.enum(["public", "family", "friends"]).default("public"),
   })
   .refine((data) => data.type === "text" || !!data.media_url, {
