@@ -156,7 +156,7 @@ export function PostComposer({
             ))}
           </div>
 
-          {audienceOptions && audienceOptions.length > 1 && (
+          {audienceOptions && audienceOptions.length > 1 ? (
             <div className="flex flex-col gap-1">
               <span className="text-xs text-muted">Who can see this</span>
               <div className="flex flex-wrap gap-2">
@@ -176,6 +176,15 @@ export function PostComposer({
                 ))}
               </div>
             </div>
+          ) : (
+            // No picker to show — either the page itself implies a single
+            // audience (e.g. /family, /friends: no audienceOptions at all),
+            // or audienceOptions narrowed to exactly one choice (a guest on
+            // the profile page only has Family available). Either way, say
+            // so plainly instead of leaving where this is headed unstated.
+            <p className="text-xs text-muted">
+              Posting to <span className="font-medium text-foreground">{AUDIENCE_LABELS[activeAudience]}</span>.
+            </p>
           )}
 
           {type === "text" ? (
