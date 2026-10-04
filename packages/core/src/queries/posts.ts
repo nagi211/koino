@@ -55,7 +55,7 @@ export async function getFamilyFeed(client: SupabaseClient<Database>): Promise<P
   return withAuthorUsername(data as unknown as RawPostRow[]);
 }
 
-/** The friends-only feed — RLS scopes this to confirmed friends who aren't also confirmed family (see 0036). */
+/** The friends-only feed — RLS scopes this to confirmed friends or confirmed family (see 0038). */
 export async function getFriendsFeed(client: SupabaseClient<Database>): Promise<PostWithAuthor[]> {
   const { data, error } = await client
     .from("posts")
@@ -137,9 +137,9 @@ export async function getLatestApprovedPost(
 }
 
 /**
- * RLS enforces: public posts require status='active'; family posts only require
- * not being suspended (guests can post to their own family circle — see
- * 0032_family_circles.sql).
+ * RLS enforces: public posts require status='active'; family and friends posts
+ * only require not being suspended (guests can post to their own family circle
+ * and friends — see 0032_family_circles.sql and 0038_friends_family_automatic.sql).
  */
 export async function createPost(client: SupabaseClient<Database>, authorId: string, input: CreatePostInput): Promise<Post> {
   const { data, error } = await client

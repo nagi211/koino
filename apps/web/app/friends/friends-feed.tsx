@@ -63,11 +63,10 @@ export function FriendsFeed({
     setFriendsDrawerOpen((current) => current || true);
   }, [searchParams]);
 
-  // Unlike family (a real-world relationship that predates the app, so it
-  // gets a carve-out from the vouch gate — see 0032/0036), a friend here is
-  // just a mutual add between two profiles with no built-in trust, so
-  // posting/commenting/reporting to friends follows the same active-only
-  // rule as the public feed.
+  // Commenting/reporting still require an active account, same as the public
+  // feed — only *posting* and *liking* within friends are open to any
+  // non-suspended member now (family is automatically friends too — see
+  // 0038_friends_family_automatic.sql).
   function requireAuth(action: () => void) {
     if (profile.status !== "active") {
       setVouchGateOpen(true);
@@ -80,6 +79,8 @@ export function FriendsFeed({
     if (profile.status === "suspended") return;
     action();
   }
+
+  const canPost = profile.status !== "suspended";
 
   return (
     <div className="fixed inset-0 flex">
@@ -138,20 +139,22 @@ export function FriendsFeed({
             <li className="flex h-full w-full flex-col items-center justify-center gap-2 text-center">
               <p className="text-muted">No friends posts yet.</p>
               <p className="max-w-xs text-sm text-muted">
-                Posts you share here are only visible to your confirmed friends who aren&rsquo;t already family.
+                Posts you share here are only visible to your confirmed friends and family.
               </p>
             </li>
           )}
         </ul>
 
-        <button
-          type="button"
-          onClick={() => requireAuth(() => setComposerOpen(true))}
-          aria-label="New friends post"
-          className="fixed bottom-6 right-6 flex h-14 w-14 items-center justify-center rounded-full bg-olive-dark text-3xl leading-none text-white shadow-lg transition hover:brightness-105"
-        >
-          +
-        </button>
+        {canPost && (
+          <button
+            type="button"
+            onClick={() => setComposerOpen(true)}
+            aria-label="New friends post"
+            className="fixed bottom-6 right-6 flex h-14 w-14 items-center justify-center rounded-full bg-olive-dark text-3xl leading-none text-white shadow-lg transition hover:brightness-105"
+          >
+            +
+          </button>
+        )}
       </div>
 
       <aside className="hidden w-80 shrink-0 overflow-y-auto border-l border-card-border bg-background p-4 lg:block">

@@ -622,15 +622,16 @@ export function ProfileScreen({
           >
             <PageBackgroundForm profile={target} onSaved={() => setEditingPageBackground(false)} onDirtyChange={setPageBackgroundDirty} />
           </Modal>
-          {/* Public/friends both need status='active' at the RLS layer; family
-              only needs non-suspended (guests included — see 0032/0036), so a
-              still-pending guest only gets offered that one instead of
-              opening the composer to an audience that's just going to fail. */}
+          {/* Public needs status='active' at the RLS layer; family and friends
+              only need non-suspended (guests included — see
+              0032/0038_friends_family_automatic.sql), so a still-pending guest
+              only gets offered those two instead of opening the composer to
+              an audience that's just going to fail. */}
           <PostComposer
             open={composerOpen}
             onClose={() => setComposerOpen(false)}
             authorId={viewer.id}
-            audienceOptions={viewer.status === "active" ? ["public", "family", "friends"] : ["family"]}
+            audienceOptions={viewer.status === "active" ? ["public", "family", "friends"] : ["family", "friends"]}
           />
         </>
       )}
