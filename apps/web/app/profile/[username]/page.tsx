@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import type { FamilyConnectionStatus, FriendshipStatus } from "@koino/core";
 import {
+  getFamily,
   getFriends,
   getLatestVisiblePost,
   getMyFamilyStatuses,
@@ -33,6 +34,7 @@ export default async function ProfileByUsernamePage({ params }: { params: Promis
     topFriends,
     wallComments,
     targetFriends,
+    targetFamily,
     friendStatuses,
     familyStatuses,
     latestPost,
@@ -44,6 +46,7 @@ export default async function ProfileByUsernamePage({ params }: { params: Promis
     getTopFriends(supabase, target.id),
     getProfileComments(supabase, target.id),
     getFriends(supabase, target.id),
+    isSelf ? getFamily(supabase, target.id) : Promise.resolve([]),
     !isSelf
       ? getMyFriendStatuses(supabase, viewer.id, [target.id])
       : Promise.resolve({} as Record<string, FriendshipStatus>),
@@ -69,6 +72,7 @@ export default async function ProfileByUsernamePage({ params }: { params: Promis
       topFriends={topFriends}
       wallComments={wallComments}
       myFriends={isSelf ? targetFriends : []}
+      myFamily={isSelf ? targetFamily : []}
       friendCount={targetFriends.length}
       friendStatus={friendStatuses[target.id] ?? "none"}
       familyStatus={familyStatuses[target.id] ?? "none"}

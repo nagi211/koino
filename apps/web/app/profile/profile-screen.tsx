@@ -8,6 +8,7 @@ import "react-grid-layout/css/styles.css";
 import { updateProfile } from "@koino/core";
 import type {
   FamilyConnectionStatus,
+  FamilyConnectionWithProfile,
   FriendshipStatus,
   FriendshipWithProfile,
   Profile,
@@ -115,6 +116,7 @@ export function ProfileScreen({
   topFriends,
   wallComments,
   myFriends,
+  myFamily,
   friendCount,
   friendStatus,
   familyStatus,
@@ -132,6 +134,7 @@ export function ProfileScreen({
   topFriends: TopFriendWithProfile[];
   wallComments: ProfileCommentWithAuthor[];
   myFriends: FriendshipWithProfile[];
+  myFamily: FamilyConnectionWithProfile[];
   friendCount: number;
   friendStatus: FriendshipStatus;
   familyStatus: FamilyConnectionStatus;
@@ -608,6 +611,7 @@ export function ProfileScreen({
               profile={target}
               topFriends={topFriends}
               myFriends={myFriends}
+              myFamily={myFamily}
               onSaved={() => setEditingPanel(null)}
               onDirtyChange={setPanelDirty}
             />

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { setTopFriends, updateProfile, updateProfileSchema } from "@koino/core";
-import type { FriendshipWithProfile, Profile, ProfileTheme, TopFriendWithProfile } from "@koino/core";
+import type { FamilyConnectionWithProfile, FriendshipWithProfile, Profile, ProfileTheme, TopFriendWithProfile } from "@koino/core";
 import { createClient } from "@/lib/supabase/client";
 import { Avatar } from "../avatar";
 import { PanelStyleEditor } from "./panel-style-editor";
@@ -15,17 +15,36 @@ export function FriendSpaceEditForm({
   profile,
   topFriends,
   myFriends,
+  myFamily,
   onSaved,
   onDirtyChange,
 }: {
   profile: Profile;
   topFriends: TopFriendWithProfile[];
   myFriends: FriendshipWithProfile[];
+  myFamily: FamilyConnectionWithProfile[];
   onSaved?: () => void;
   /** Reports whether the form has unsaved changes, so the surrounding modal can
    * confirm before discarding them on close. */
   onDirtyChange?: (dirty: boolean) => void;
 }) {
+  // Family counts as an automatic friend everywhere else in the app (see
+  // 0038/0039) — featuring someone here follows the same rule, so the pick
+  // list merges both sources instead of friends only. Friends first, then
+  // any family member not already in that list (someone connected both ways
+  // would otherwise appear twice).
+  const people: Profile[] = [];
+  const seenIds = new Set<string>();
+  for (const friend of myFriends) {
+    if (seenIds.has(friend.profile.id)) continue;
+    seenIds.add(friend.profile.id);
+    people.push(friend.profile);
+  }
+  for (const family of myFamily) {
+    if (seenIds.has(family.profile.id)) continue;
+    seenIds.add(family.profile.id);
+    people.push(family.profile);
+  }
   const router = useRouter();
   const [theme, setTheme] = useState<ProfileTheme>(resolveTheme(profile.theme));
   const [selected, setSelected] = useState<string[]>(topFriends.map((tf) => tf.friend_id));
@@ -102,32 +121,32 @@ export function FriendSpaceEditForm({
       <h2 className="text-lg font-semibold text-foreground">Edit Fellowship</h2>
 
       <div className="flex flex-col gap-2">
-        <p className="text-xs text-muted">Pick up to {MAX_TOP_FRIENDS} friends to feature, in the order you tap them.</p>
-        {myFriends.length === 0 ? (
-          <p className="text-sm text-muted">You don&rsquo;t have any friends yet.</p>
+        <p className="text-xs text-muted">Pick up to {MAX_TOP_FRIENDS} friends or family to feature, in the order you tap them.</p>
+        {people.length === 0 ? (
+          <p className="text-sm text-muted">You don&rsquo;t have any friends or family yet.</p>
         ) : (
           <ul className="flex flex-wrap gap-3">
-            {myFriends.map((friend) => {
-              const isChecked = selected.includes(friend.profile.id);
-              const position = selected.indexOf(friend.profile.id);
+            {people.map((person) => {
+              const isChecked = selected.includes(person.id);
+              const position = selected.indexOf(person.id);
               return (
-                <li key={friend.friendship_id}>
+                <li key={person.id}>
                   <button
                     type="button"
-                    onClick={() => toggle(friend.profile.id)}
+                    onClick={() => toggle(person.id)}
                     className={`flex w-20 flex-col items-center gap-1 rounded-xl border-2 p-2 text-center transition ${
                       isChecked ? "border-olive-dark bg-input" : "border-transparent hover:bg-input"
                     }`}
                   >
                     <div className="relative">
-                      <Avatar url={friend.profile.avatar_url} username={friend.profile.username} size={48} />
+                      <Avatar url={person.avatar_url} username={person.username} size={48} />
                       {isChecked && (
                         <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-olive-dark text-xs font-semibold text-white">
                           {position + 1}
                         </span>
                       )}
                     </div>
-                    <span className="w-full truncate text-xs text-muted">@{friend.profile.username}</span>
+                    <span className="w-full truncate text-xs text-muted">@{person.username}</span>
                   </button>
                 </li>
               );
