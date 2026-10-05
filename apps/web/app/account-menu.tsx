@@ -34,6 +34,7 @@ export function AccountMenu({
   unreadMessageCount: initialUnreadMessageCount,
   onOpenVouchGate,
   variant = "dropdown",
+  extraItems,
 }: {
   profile: Profile;
   unreadMessageCount: number;
@@ -44,6 +45,11 @@ export function AccountMenu({
    * of adding a second, separate nav trigger next to it — collapsed by
    * default so it doesn't compete with that panel's own primary content. */
   variant?: "dropdown" | "inline";
+  /** Extra page-specific actions (e.g. the profile page's own "Page
+   * background"/"Reset to default") appended after the standard nav links,
+   * above Log out. Takes `close` so an item can collapse/dismiss the menu
+   * the same way the built-in links do. */
+  extraItems?: (close: () => void) => React.ReactNode;
 }) {
   const router = useRouter();
   const unreadMessageCount = useUnreadMessageCount(profile, initialUnreadMessageCount);
@@ -129,6 +135,7 @@ export function AccountMenu({
           Moderation
         </Link>
       )}
+      {extraItems && <div className="border-t border-card-border">{extraItems(close)}</div>}
       <button
         type="button"
         onClick={handleLogout}

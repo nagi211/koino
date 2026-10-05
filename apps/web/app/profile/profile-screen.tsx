@@ -203,7 +203,6 @@ export function ProfileScreen({
     try {
       await updateProfile(createClient(), viewer.id, { theme: null, layout: null, photo_settings: null });
       setLayout(DEFAULT_LAYOUT);
-      setMenuOpen(false);
       router.refresh();
     } finally {
       setResettingAll(false);
@@ -446,23 +445,26 @@ export function ProfileScreen({
                 </button>
               </div>
             ) : (
-              <div className="relative shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setMenuOpen((o) => !o)}
-                  aria-label="Profile options"
-                  className={`flex h-9 w-9 items-center justify-center rounded-full border hover:opacity-80 ${navbarIcon ? "" : "border-card-border text-muted"}`}
-                  style={navbarIcon ? { borderColor: navbarIcon, color: navbarIcon } : undefined}
-                >
-                  ⋯
-                </button>
-                {menuOpen && (
-                  <>
-                    <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
-                    <div className="absolute right-0 top-full z-20 mt-2 w-48 overflow-hidden rounded-xl border border-card-border bg-card shadow-lg">
-                      {/* Position/size is fixed on mobile (see MOBILE_BREAKPOINT above) —
-                          nothing to rearrange there, so this only makes sense at desktop width. */}
-                      {width >= MOBILE_BREAKPOINT && (
+              // Position/size is fixed on mobile (see MOBILE_BREAKPOINT above) —
+              // "Rearrange panels" is the only thing left here now that Page
+              // background/Reset to default moved into the avatar menu below
+              // (see AccountMenu's extraItems), so this only makes sense — and
+              // only needs to render at all — at desktop width.
+              width >= MOBILE_BREAKPOINT && (
+                <div className="relative shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setMenuOpen((o) => !o)}
+                    aria-label="Profile options"
+                    className={`flex h-9 w-9 items-center justify-center rounded-full border hover:opacity-80 ${navbarIcon ? "" : "border-card-border text-muted"}`}
+                    style={navbarIcon ? { borderColor: navbarIcon, color: navbarIcon } : undefined}
+                  >
+                    ⋯
+                  </button>
+                  {menuOpen && (
+                    <>
+                      <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
+                      <div className="absolute right-0 top-full z-20 mt-2 w-48 overflow-hidden rounded-xl border border-card-border bg-card shadow-lg">
                         <button
                           type="button"
                           onClick={() => {
@@ -473,36 +475,51 @@ export function ProfileScreen({
                         >
                           Rearrange panels
                         </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditingPageBackground(true);
-                          setMenuOpen(false);
-                        }}
-                        className="block w-full px-4 py-2 text-left text-sm text-foreground hover:bg-input"
-                      >
-                        Page background
-                      </button>
-                      <button
-                        type="button"
-                        disabled={resettingAll}
-                        onClick={handleResetAll}
-                        className="block w-full border-t border-card-border px-4 py-2 text-left text-sm text-danger hover:bg-input disabled:opacity-50"
-                      >
-                        {resettingAll ? "Resetting…" : "Reset to default"}
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )
             ))}
           {/* Every other page gets Sidebar (desktop) + this same avatar menu
               (mobile) for cross-page nav — profile already has its own themed
               navbar instead of Sidebar, so this stays visible at every width
               rather than switching away at desktop like elsewhere. */}
           {viewer && !editingLayout && (
-            <AccountMenu profile={viewer} unreadMessageCount={unreadMessageCount} onOpenVouchGate={() => setVouchGateOpen(true)} />
+            <AccountMenu
+              profile={viewer}
+              unreadMessageCount={unreadMessageCount}
+              onOpenVouchGate={() => setVouchGateOpen(true)}
+              extraItems={
+                isSelf
+                  ? (close) => (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingPageBackground(true);
+                            close();
+                          }}
+                          className="block w-full px-4 py-2 text-left text-sm text-foreground hover:bg-input"
+                        >
+                          Page background
+                        </button>
+                        <button
+                          type="button"
+                          disabled={resettingAll}
+                          onClick={async () => {
+                            await handleResetAll();
+                            close();
+                          }}
+                          className="block w-full px-4 py-2 text-left text-sm text-danger hover:bg-input disabled:opacity-50"
+                        >
+                          {resettingAll ? "Resetting…" : "Reset to default"}
+                        </button>
+                      </>
+                    )
+                  : undefined
+              }
+            />
           )}
         </div>
       </div>
