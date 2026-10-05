@@ -51,12 +51,16 @@ export function PostCard({
         </>
       ) : (
         post.body && (
-          <div className="flex min-h-0 flex-1 items-center">
+          // min-w-0 matters here: a flex child defaults to min-width:auto, so
+          // without it the paragraph's unwrapped content width can push past
+          // the card's edge once the font gets large (see text_size control)
+          // even though whitespace-pre-wrap/break-words would otherwise wrap it.
+          <div className="flex min-h-0 min-w-0 flex-1 items-center">
             <p
               className={
                 bg
-                  ? `w-full whitespace-pre-wrap text-center font-serif font-medium text-white ${post.text_size ? "" : "text-2xl sm:text-3xl"}`
-                  : "w-full whitespace-pre-wrap font-serif text-xl text-foreground"
+                  ? `w-full whitespace-pre-wrap break-words text-center font-serif font-medium text-white ${post.text_size ? "" : "text-2xl sm:text-3xl"}`
+                  : "w-full whitespace-pre-wrap break-words font-serif text-xl text-foreground"
               }
               style={bg && post.text_size ? { fontSize: post.text_size } : undefined}
             >
