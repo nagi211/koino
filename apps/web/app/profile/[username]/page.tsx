@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import type { FamilyConnectionStatus, FriendshipStatus } from "@koino/core";
 import {
   getFriends,
-  getLatestApprovedPost,
+  getLatestVisiblePost,
   getMyFamilyStatuses,
   getMyFriendStatuses,
   getMyProfile,
@@ -39,7 +39,7 @@ export default async function ProfileByUsernamePage({ params }: { params: Promis
       !isSelf
         ? getMyFamilyStatuses(supabase, viewer.id, [target.id])
         : Promise.resolve({} as Record<string, FamilyConnectionStatus>),
-      getLatestApprovedPost(supabase, target.id),
+      getLatestVisiblePost(supabase, target.id),
       getProfileStats(supabase, target.id),
       !isSelf ? hasLikedProfile(supabase, target.id, viewer.id) : Promise.resolve(false),
       getUnreadNotificationCount(supabase, viewer.id),

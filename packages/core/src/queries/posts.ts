@@ -112,20 +112,20 @@ export async function getPostsByIds(client: SupabaseClient<Database>, ids: strin
 }
 
 /**
- * For the profile page's "Latest Post" panel — public to any visitor, so this
- * must never surface a family-only post, and must skip past one when picking
- * "latest" (otherwise a more-recent family post would make this return nothing
- * for a stranger, even though the author has an actual public post to show).
+ * For the profile page's "Latest Post" panel — deliberately has no audience
+ * filter, unlike getApprovedFeed/getFamilyFeed/getFriendsFeed. RLS alone
+ * decides which of this author's posts the querying viewer can see (public to
+ * anyone, family/friends only to a confirmed connection, everything to the
+ * author themselves), so the most recent row Postgres actually returns here
+ * is already the right one — a stranger gets the latest public post, a
+ * confirmed friend or family member gets whichever is actually most recent
+ * among public/family/friends, with no extra logic needed to replicate RLS.
  */
-export async function getLatestApprovedPost(
-  client: SupabaseClient<Database>,
-  authorId: string
-): Promise<PostWithAuthor | null> {
+export async function getLatestVisiblePost(client: SupabaseClient<Database>, authorId: string): Promise<PostWithAuthor | null> {
   const { data, error } = await client
     .from("posts")
     .select(FEED_SELECT)
     .eq("status", "approved")
-    .eq("audience", "public")
     .eq("author_id", authorId)
     .order("created_at", { ascending: false })
     .limit(1)
@@ -134,6 +134,24 @@ export async function getLatestApprovedPost(
   if (!data) return null;
 
   return withAuthorUsername([data as unknown as RawPostRow])[0];
+}
+
+const PROFILE_POSTS_LIMIT = 50;
+
+/** For the profile page's "See all posts" page — same no-audience-filter,
+ * RLS-decides-visibility reasoning as getLatestVisiblePost, just not limited
+ * to one row. */
+export async function getVisiblePostsByAuthor(client: SupabaseClient<Database>, authorId: string): Promise<PostWithAuthor[]> {
+  const { data, error } = await client
+    .from("posts")
+    .select(FEED_SELECT)
+    .eq("status", "approved")
+    .eq("author_id", authorId)
+    .order("created_at", { ascending: false })
+    .limit(PROFILE_POSTS_LIMIT);
+  if (error) throw error;
+
+  return withAuthorUsername(data as unknown as RawPostRow[]);
 }
 
 /**

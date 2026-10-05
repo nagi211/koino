@@ -264,23 +264,38 @@ export function ProfileScreen({
               <p className="text-sm opacity-70">No posts yet.</p>
             )}
           </div>
-          {/* Suspension revokes posting entirely, same as everywhere else — no
-              audience would actually accept a post from a suspended member,
-              so there's nothing useful this button could open. */}
-          {isSelf && viewer && viewer.status !== "suspended" && (
-            <button
-              type="button"
-              onClick={() => setComposerOpen(true)}
-              className={
-                latestPostStyle
-                  ? "self-start rounded-xl border px-4 py-1.5 text-sm hover:opacity-80"
-                  : "self-start rounded-xl border border-card-border px-4 py-1.5 text-sm text-muted hover:text-foreground"
-              }
-              style={latestPostStyle ? { borderColor: latestPostStyle.border } : undefined}
-            >
-              {latestPost ? "Post something new" : "Add a post"}
-            </button>
-          )}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Suspension revokes posting entirely, same as everywhere else —
+                no audience would actually accept a post from a suspended
+                member, so there's nothing useful this button could open. */}
+            {isSelf && viewer && viewer.status !== "suspended" && (
+              <button
+                type="button"
+                onClick={() => setComposerOpen(true)}
+                className={
+                  latestPostStyle
+                    ? "self-start rounded-xl border px-4 py-1.5 text-sm hover:opacity-80"
+                    : "self-start rounded-xl border border-card-border px-4 py-1.5 text-sm text-muted hover:text-foreground"
+                }
+                style={latestPostStyle ? { borderColor: latestPostStyle.border } : undefined}
+              >
+                {latestPost ? "Post something new" : "Add a post"}
+              </button>
+            )}
+            {latestPost && (
+              <Link
+                href={`/profile/${target.username}/posts`}
+                className={
+                  latestPostStyle
+                    ? "self-start rounded-xl border px-4 py-1.5 text-sm hover:opacity-80"
+                    : "self-start rounded-xl border border-card-border px-4 py-1.5 text-sm text-muted hover:text-foreground"
+                }
+                style={latestPostStyle ? { borderColor: latestPostStyle.border } : undefined}
+              >
+                See all posts
+              </Link>
+            )}
+          </div>
         </div>
       </Panel>
     ),
