@@ -17,14 +17,21 @@ export function AccountMenu({
   profile,
   unreadMessageCount: initialUnreadMessageCount,
   onOpenVouchGate,
+  variant = "dropdown",
 }: {
   profile: Profile;
   unreadMessageCount: number;
   onOpenVouchGate: () => void;
+  /** "dropdown" (default): an avatar button that toggles a floating menu —
+   * used in a page header. "inline": just the link list, always expanded,
+   * no avatar/trigger — for embedding directly inside another panel (e.g. the
+   * family/friends drawer) instead of adding a second, separate nav trigger
+   * next to it. */
+  variant?: "dropdown" | "inline";
 }) {
   const router = useRouter();
   const unreadMessageCount = useUnreadMessageCount(profile, initialUnreadMessageCount);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(variant === "inline");
   const [signingOut, setSigningOut] = useState(false);
   const [isRefreshing, startLogoutTransition] = useTransition();
   const loggingOut = signingOut || isRefreshing;
@@ -55,6 +62,67 @@ export function AccountMenu({
   }
 
   const itemClass = "block w-full px-4 py-2 text-left text-sm text-foreground hover:bg-input";
+  // Inline mode has nothing to collapse — it's a fixed part of the panel it's
+  // embedded in, not a toggleable overlay — so a link click just navigates.
+  const close = variant === "dropdown" ? () => setOpen(false) : () => {};
+
+  const links = (
+    <>
+      {variant === "dropdown" && (
+        <div className="border-b border-card-border px-4 py-2 font-mono text-sm text-muted">@{profile.username}</div>
+      )}
+      <Link href="/profile" onClick={close} className={itemClass}>
+        Profile
+      </Link>
+      <Link href="/friends" onClick={close} className={itemClass}>
+        Friends
+      </Link>
+      <Link
+        href="/messages"
+        onClick={close}
+        className="flex w-full items-center justify-between px-4 py-2 text-left text-sm text-foreground hover:bg-input"
+      >
+        Messages
+        {unreadMessageCount > 0 && (
+          <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-medium leading-none text-white">
+            {unreadMessageCount > 9 ? "9+" : unreadMessageCount}
+          </span>
+        )}
+      </Link>
+      <Link href="/family" onClick={close} className={itemClass}>
+        Family
+      </Link>
+      {profile.status === "pending" && (
+        <button
+          type="button"
+          onClick={() => {
+            close();
+            onOpenVouchGate();
+          }}
+          className={itemClass}
+        >
+          Say hello
+        </button>
+      )}
+      {(profile.role === "leader" || profile.role === "admin") && profile.status === "active" && (
+        <Link href="/moderation" onClick={close} className={itemClass}>
+          Moderation
+        </Link>
+      )}
+      <button
+        type="button"
+        onClick={handleLogout}
+        disabled={loggingOut}
+        className={`${itemClass} border-t border-card-border disabled:opacity-50`}
+      >
+        {loggingOut ? "Logging out…" : "Log out"}
+      </button>
+    </>
+  );
+
+  if (variant === "inline") {
+    return <div className="overflow-hidden rounded-xl border border-card-border">{links}</div>;
+  }
 
   return (
     <div className="relative shrink-0">
@@ -69,53 +137,7 @@ export function AccountMenu({
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
           <div className="absolute right-0 top-full z-20 mt-2 w-48 overflow-hidden rounded-xl border border-card-border bg-card shadow-lg">
-            <div className="border-b border-card-border px-4 py-2 font-mono text-sm text-muted">@{profile.username}</div>
-            <Link href="/profile" onClick={() => setOpen(false)} className={itemClass}>
-              Profile
-            </Link>
-            <Link href="/friends" onClick={() => setOpen(false)} className={itemClass}>
-              Friends
-            </Link>
-            <Link
-              href="/messages"
-              onClick={() => setOpen(false)}
-              className="flex w-full items-center justify-between px-4 py-2 text-left text-sm text-foreground hover:bg-input"
-            >
-              Messages
-              {unreadMessageCount > 0 && (
-                <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-medium leading-none text-white">
-                  {unreadMessageCount > 9 ? "9+" : unreadMessageCount}
-                </span>
-              )}
-            </Link>
-            <Link href="/family" onClick={() => setOpen(false)} className={itemClass}>
-              Family
-            </Link>
-            {profile.status === "pending" && (
-              <button
-                type="button"
-                onClick={() => {
-                  setOpen(false);
-                  onOpenVouchGate();
-                }}
-                className={itemClass}
-              >
-                Say hello
-              </button>
-            )}
-            {(profile.role === "leader" || profile.role === "admin") && profile.status === "active" && (
-              <Link href="/moderation" onClick={() => setOpen(false)} className={itemClass}>
-                Moderation
-              </Link>
-            )}
-            <button
-              type="button"
-              onClick={handleLogout}
-              disabled={loggingOut}
-              className={`${itemClass} border-t border-card-border disabled:opacity-50`}
-            >
-              {loggingOut ? "Logging out…" : "Log out"}
-            </button>
+            {links}
           </div>
         </>
       )}

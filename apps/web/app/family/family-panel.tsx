@@ -13,6 +13,7 @@ import {
 } from "@koino/core";
 import type { FamilyConnectionStatus, FamilyConnectionWithProfile, FamilyRelationship, Profile } from "@koino/core";
 import { createClient } from "@/lib/supabase/client";
+import { AccountMenu } from "../account-menu";
 import { Avatar } from "../avatar";
 import { ProfileCard } from "../profile-card";
 
@@ -20,10 +21,14 @@ export function FamilyPanel({
   profile,
   initialFamily,
   initialRequests,
+  unreadMessageCount,
+  onOpenVouchGate,
 }: {
   profile: Profile;
   initialFamily: FamilyConnectionWithProfile[];
   initialRequests: FamilyConnectionWithProfile[];
+  unreadMessageCount: number;
+  onOpenVouchGate: () => void;
 }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Profile[]>([]);
@@ -104,6 +109,15 @@ export function FamilyPanel({
   return (
     <div className="flex h-full flex-col gap-6">
       <ProfileCard profile={profile} />
+
+      {/* Sidebar (md:flex) already covers this at that width and up — this
+          panel is the only thing a <md viewport has open here (there's no
+          separate avatar nav trigger any more, see family-feed.tsx), so it
+          needs to carry the rest of the app's nav itself below that. */}
+      <div className="md:hidden">
+        <AccountMenu profile={profile} unreadMessageCount={unreadMessageCount} onOpenVouchGate={onOpenVouchGate} variant="inline" />
+      </div>
+
       <hr className="border-card-border" />
 
       <div>

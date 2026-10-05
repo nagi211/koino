@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import type { FriendshipStatus, FriendshipWithProfile, PostWithAuthor, Profile } from "@koino/core";
-import { AccountMenu } from "../account-menu";
 import { NotificationBell } from "../notification-bell";
 import { FriendsPanel } from "../friends-panel";
 import { PostActions } from "../post-actions";
@@ -103,10 +102,6 @@ export function FriendsFeed({
           <h1 className="absolute left-1/2 -translate-x-1/2 text-lg font-bold text-foreground">Friends</h1>
           <div className="flex items-center gap-3">
             <NotificationBell profile={profile} initialUnreadCount={unreadNotificationCount} />
-            {/* Sidebar covers this from md: up — avatar menu fills the gap below that. */}
-            <div className="md:hidden">
-              <AccountMenu profile={profile} unreadMessageCount={unreadMessageCount} onOpenVouchGate={() => setVouchGateOpen(true)} />
-            </div>
             <button
               type="button"
               onClick={() => setFriendsDrawerOpen(true)}
@@ -173,7 +168,13 @@ export function FriendsFeed({
       </div>
 
       <aside className="hidden w-80 shrink-0 overflow-y-auto border-l border-card-border bg-background p-4 lg:block">
-        <FriendsPanel profile={profile} initialFriends={initialFriends} initialRequests={initialRequests} />
+        <FriendsPanel
+          profile={profile}
+          initialFriends={initialFriends}
+          initialRequests={initialRequests}
+          unreadMessageCount={unreadMessageCount}
+          onOpenVouchGate={() => setVouchGateOpen(true)}
+        />
       </aside>
 
       {friendsDrawerOpen && (
@@ -188,7 +189,13 @@ export function FriendsFeed({
             >
               ✕
             </button>
-            <FriendsPanel profile={profile} initialFriends={initialFriends} initialRequests={initialRequests} />
+            <FriendsPanel
+          profile={profile}
+          initialFriends={initialFriends}
+          initialRequests={initialRequests}
+          unreadMessageCount={unreadMessageCount}
+          onOpenVouchGate={() => setVouchGateOpen(true)}
+        />
           </div>
         </div>
       )}

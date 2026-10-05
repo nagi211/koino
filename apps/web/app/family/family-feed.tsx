@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import type { FamilyConnectionWithProfile, FriendshipStatus, PostWithAuthor, Profile } from "@koino/core";
-import { AccountMenu } from "../account-menu";
 import { NotificationBell } from "../notification-bell";
 import { PostActions } from "../post-actions";
 import { PostCard } from "../post-card";
@@ -113,10 +112,6 @@ export function FamilyFeed({
                 section (desktop aside / mobile drawer both render it), so
                 there's nothing tree-related left to duplicate up here. */}
             <NotificationBell profile={profile} initialUnreadCount={unreadNotificationCount} />
-            {/* Sidebar covers this from md: up — avatar menu fills the gap below that. */}
-            <div className="md:hidden">
-              <AccountMenu profile={profile} unreadMessageCount={unreadMessageCount} onOpenVouchGate={() => setVouchGateOpen(true)} />
-            </div>
             <button
               type="button"
               onClick={() => setFamilyDrawerOpen(true)}
@@ -183,7 +178,13 @@ export function FamilyFeed({
       </div>
 
       <aside className="hidden w-80 shrink-0 overflow-y-auto border-l border-card-border bg-background p-4 lg:block">
-        <FamilyPanel profile={profile} initialFamily={initialFamily} initialRequests={initialRequests} />
+        <FamilyPanel
+          profile={profile}
+          initialFamily={initialFamily}
+          initialRequests={initialRequests}
+          unreadMessageCount={unreadMessageCount}
+          onOpenVouchGate={() => setVouchGateOpen(true)}
+        />
       </aside>
 
       {familyDrawerOpen && (
@@ -198,7 +199,13 @@ export function FamilyFeed({
             >
               ✕
             </button>
-            <FamilyPanel profile={profile} initialFamily={initialFamily} initialRequests={initialRequests} />
+            <FamilyPanel
+          profile={profile}
+          initialFamily={initialFamily}
+          initialRequests={initialRequests}
+          unreadMessageCount={unreadMessageCount}
+          onOpenVouchGate={() => setVouchGateOpen(true)}
+        />
           </div>
         </div>
       )}
