@@ -24,7 +24,17 @@ const TYPE_COPY: Record<NotificationWithActor["type"], string> = {
 };
 
 function targetHref(notification: NotificationWithActor): string {
-  if (notification.type === "post_like" || notification.type === "post_comment") return "/";
+  if (notification.type === "post_like" || notification.type === "post_comment") {
+    if (!notification.post_id) return "/";
+    // A comment notification should land straight on the comments, not just
+    // the post itself — see single-post-view.tsx's `openComments` prop.
+    return notification.type === "post_comment" ? `/post/${notification.post_id}?comments=1` : `/post/${notification.post_id}`;
+  }
+  // The recipient is always the signed-in viewer here (these are their own
+  // notifications) — a like/comment on THEIR profile belongs on their own
+  // profile, not the actor's, which is what the generic fallback below would
+  // otherwise send this to.
+  if (notification.type === "profile_like" || notification.type === "profile_comment") return "/profile";
   if (notification.type === "vouch_claimed" || notification.type === "new_message") {
     // Both always carry a conversation_id (set when the notification is created —
     // see 0019_notifications.sql / 0023's claim_vouch_request and the messages trigger).

@@ -29,6 +29,7 @@ export function PostActions({
   requireAuth,
   requireEngagement,
   lightText,
+  initiallyOpenComments = false,
 }: {
   post: PostWithAuthor;
   profile: Profile | null;
@@ -40,12 +41,15 @@ export function PostActions({
    * requireAuth/CommentPanel's own active-only check. */
   requireEngagement: (action: () => void) => void;
   lightText: boolean;
+  /** Opens the comment panel immediately — for arriving here from a "commented
+   * on your post" notification, where seeing the comments is the whole point. */
+  initiallyOpenComments?: boolean;
 }) {
   const [liked, setLiked] = useState(initiallyLiked);
   const [prevInitiallyLiked, setPrevInitiallyLiked] = useState(initiallyLiked);
   const [likeCount, setLikeCount] = useState(post.like_count);
   const [commentCount, setCommentCount] = useState(post.comment_count);
-  const [commentsOpen, setCommentsOpen] = useState(false);
+  const [commentsOpen, setCommentsOpen] = useState(initiallyOpenComments);
   const [likeError, setLikeError] = useState<string | null>(null);
 
   // initiallyLiked can change after mount (e.g. a guest signs in mid-session on a
