@@ -22,6 +22,48 @@ const AUDIENCE_LABELS: Record<PostAudience, string> = {
 // a colored-background post always rendered at before this control existed.
 const DEFAULT_POST_TEXT_SIZE = 28;
 
+// A draft only ever holds what's actually safe/possible to persist to
+// localStorage — a File object can't be serialized, so a photo/video draft
+// keeps its caption and type but drops the file itself; the composer just
+// asks the poster to re-attach it when they come back.
+type PostDraft = {
+  type: PostType;
+  body: string;
+  background: PostBackground | null;
+  textSize: number;
+  audience: PostAudience;
+};
+
+function draftKey(authorId: string) {
+  return `koino:post-draft:${authorId}`;
+}
+
+function loadDraft(authorId: string): PostDraft | null {
+  try {
+    const raw = window.localStorage.getItem(draftKey(authorId));
+    return raw ? (JSON.parse(raw) as PostDraft) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveDraft(authorId: string, draft: PostDraft) {
+  try {
+    window.localStorage.setItem(draftKey(authorId), JSON.stringify(draft));
+  } catch {
+    // best-effort — a draft failing to save (e.g. storage disabled/full)
+    // shouldn't block the close the poster actually asked for
+  }
+}
+
+function clearDraft(authorId: string) {
+  try {
+    window.localStorage.removeItem(draftKey(authorId));
+  } catch {
+    // best-effort, see saveDraft
+  }
+}
+
 export function PostComposer({
   open,
   onClose,
@@ -54,6 +96,41 @@ export function PostComposer({
   const [done, setDone] = useState(false);
   const [selectedAudience, setSelectedAudience] = useState<PostAudience>(audienceOptions?.[0] ?? audience);
   const activeAudience = audienceOptions ? selectedAudience : audience;
+  const [restoredDraft, setRestoredDraft] = useState(false);
+  // Shown in place of the form when closing would otherwise silently drop
+  // unposted content — lets the poster pick save-as-draft vs. discard
+  // instead of just losing it.
+  const [confirmingClose, setConfirmingClose] = useState(false);
+
+  // Picks up any draft left from a previous visit each time the composer
+  // opens — a fixed audience/page context overrides whatever audience the
+  // draft was saved under, so a draft never ends up pointed somewhere this
+  // instance of the composer can't actually offer. Adjusted during render
+  // (React's documented pattern for deriving state from a prop transition)
+  // rather than in an effect, since the composer stays mounted across
+  // opens/closes instead of remounting — an effect keyed on `open` would
+  // still fire exactly once per open either way, just a render later.
+  const [prevOpen, setPrevOpen] = useState(open);
+  if (open !== prevOpen) {
+    setPrevOpen(open);
+    if (open) {
+      const draft = loadDraft(authorId);
+      if (draft) {
+        setType(draft.type);
+        setBody(draft.body);
+        setBackground(draft.background);
+        setTextSize(draft.textSize);
+        if (audienceOptions) {
+          setSelectedAudience(audienceOptions.includes(draft.audience) ? draft.audience : audienceOptions[0]);
+        }
+        setRestoredDraft(true);
+      }
+    }
+  }
+
+  function isFormEmpty() {
+    return !body.trim() && !file && !background;
+  }
 
   function reset() {
     setType("text");
@@ -65,9 +142,33 @@ export function PostComposer({
     setError(null);
     setDone(false);
     setSelectedAudience(audienceOptions?.[0] ?? audience);
+    setRestoredDraft(false);
+    setConfirmingClose(false);
+  }
+
+  // Gates every close attempt (✕ button and backdrop click both route
+  // through this, via Modal's confirmClose) — returning false keeps the
+  // modal open and shows the draft/discard prompt in place of the form
+  // instead of letting the close through.
+  function guardClose(): boolean {
+    if (done || isFormEmpty()) return true;
+    setConfirmingClose(true);
+    return false;
   }
 
   function handleClose() {
+    reset();
+    onClose();
+  }
+
+  function handleSaveDraft() {
+    saveDraft(authorId, { type, body, background, textSize, audience: activeAudience });
+    reset();
+    onClose();
+  }
+
+  function handleDiscardDraft() {
+    clearDraft(authorId);
     reset();
     onClose();
   }
@@ -127,6 +228,7 @@ export function PostComposer({
       // Every post publishes instantly now (see 0030_auto_approve_all_posts.sql) —
       // leaders/admins monitor recent posts afterward instead of pre-approving.
       await createPost(client, authorId, parsed.data);
+      clearDraft(authorId);
       setDone(true);
       router.refresh();
     } catch (err) {
@@ -137,12 +239,53 @@ export function PostComposer({
   }
 
   return (
-    <Modal open={open} onClose={handleClose}>
+    <Modal open={open} onClose={handleClose} confirmClose={guardClose}>
       <h2 className="mb-4 text-lg font-semibold text-foreground">New post</h2>
       {done ? (
         <p className="text-sm text-muted">Posted! It&apos;s live in the feed now.</p>
+      ) : confirmingClose ? (
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-foreground">
+            This post hasn&rsquo;t been shared yet. Save it as a draft to finish later, or discard it?
+          </p>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={handleDiscardDraft}
+              className="flex-1 rounded-xl border border-card-border px-4 py-2 text-sm text-muted hover:text-foreground"
+            >
+              Discard
+            </button>
+            <button
+              type="button"
+              onClick={handleSaveDraft}
+              className="flex-1 rounded-xl bg-olive-dark px-4 py-2 text-sm font-medium text-white hover:brightness-105"
+            >
+              Save as draft
+            </button>
+          </div>
+          <button type="button" onClick={() => setConfirmingClose(false)} className="text-sm text-muted hover:text-foreground">
+            Keep editing
+          </button>
+        </div>
       ) : (
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+          {restoredDraft && (
+            <p className="text-xs text-muted">
+              Continuing a draft from earlier.{" "}
+              <button
+                type="button"
+                onClick={() => {
+                  clearDraft(authorId);
+                  reset();
+                }}
+                className="underline hover:text-foreground"
+              >
+                Start fresh
+              </button>
+            </p>
+          )}
+
           <div className="flex gap-4 text-sm">
             {(["text", "image", "video"] as const).map((t) => (
               <button
@@ -246,6 +389,9 @@ export function PostComposer({
                 onChange={handleFileChange}
                 className="text-sm text-muted file:mr-3 file:rounded-xl file:border-0 file:bg-input file:px-3 file:py-1.5 file:text-foreground"
               />
+              {restoredDraft && !file && (
+                <p className="text-xs text-muted">This draft had a {type} attached — re-select it to finish posting.</p>
+              )}
               {previewUrl &&
                 (type === "image" ? (
                   // eslint-disable-next-line @next/next/no-img-element -- local blob preview, not a stored asset
