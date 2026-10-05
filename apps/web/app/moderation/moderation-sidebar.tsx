@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import type { Profile } from "@koino/core";
+import { AccountMenu } from "../account-menu";
 
 function RecentPostsIcon() {
   return (
@@ -57,7 +59,7 @@ const ITEMS = [
 // counterpart) — this had no responsive handling at all before: a fixed
 // w-56 aside, always rendered, squeezing the actual queue content into
 // almost no room on a phone-width screen.
-export function ModerationSidebar() {
+export function ModerationSidebar({ profile, unreadMessageCount }: { profile: Profile; unreadMessageCount: number }) {
   const pathname = usePathname();
 
   function itemClass(active: boolean) {
@@ -68,9 +70,15 @@ export function ModerationSidebar() {
 
   return (
     <aside className="hidden w-56 shrink-0 flex-col gap-1 border-r border-card-border bg-background p-4 md:flex">
-      <Link href="/" className="mb-6 px-3 text-xl font-bold text-foreground hover:opacity-80">
-        Koino
-      </Link>
+      <div className="mb-6 flex items-center justify-between px-3">
+        <Link href="/" className="text-xl font-bold text-foreground hover:opacity-80">
+          Koino
+        </Link>
+        {/* Only an active leader/admin ever reaches moderation (see layout.tsx's
+            gate), so "Say hello" (pending-only) inside this menu never applies —
+            no vouch gate wired up here. */}
+        <AccountMenu profile={profile} unreadMessageCount={unreadMessageCount} onOpenVouchGate={() => {}} />
+      </div>
       <div className="flex flex-col gap-1">
         {ITEMS.map(({ href, label, Icon }) => (
           <Link key={href} href={href} className={itemClass(pathname === href)}>
@@ -88,7 +96,7 @@ export function ModerationSidebar() {
 // sidebar's own Koino link disappears with it below md) — the same drawer
 // pattern already used for Friends (app-shell.tsx) and Family
 // (family-feed.tsx) on mobile, rather than introducing a new one.
-export function ModerationMobileNav() {
+export function ModerationMobileNav({ profile, unreadMessageCount }: { profile: Profile; unreadMessageCount: number }) {
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -101,7 +109,7 @@ export function ModerationMobileNav() {
   return (
     <>
       <div className="flex items-center justify-between border-b border-card-border bg-background px-4 py-3 md:hidden">
-        <span className="w-[22px]" aria-hidden />
+        <AccountMenu profile={profile} unreadMessageCount={unreadMessageCount} onOpenVouchGate={() => {}} />
         <span className="text-sm font-semibold text-foreground">Moderation</span>
         <button
           type="button"

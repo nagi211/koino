@@ -6,6 +6,7 @@ import {
   getMyProfile,
   getMySavedPostIds,
   getProfileByUsername,
+  getUnreadMessageCount,
   getUnreadNotificationCount,
   getVisiblePostsByAuthor,
 } from "@koino/core";
@@ -25,11 +26,12 @@ export default async function ProfilePostsPage({ params }: { params: Promise<{ u
   const posts = await getVisiblePostsByAuthor(supabase, target.id);
   const postIds = posts.map((post) => post.id);
 
-  const [likedPostIds, savedPostIds, friendStatuses, unreadNotificationCount] = await Promise.all([
+  const [likedPostIds, savedPostIds, friendStatuses, unreadNotificationCount, unreadMessageCount] = await Promise.all([
     getMyLikedPostIds(supabase, viewer.id, postIds).then((set) => Array.from(set)),
     getMySavedPostIds(supabase, viewer.id, postIds).then((set) => Array.from(set)),
     !isSelf ? getMyFriendStatuses(supabase, viewer.id, [target.id]) : Promise.resolve({} as Record<string, FriendshipStatus>),
     getUnreadNotificationCount(supabase, viewer.id),
+    getUnreadMessageCount(supabase, viewer.id),
   ]);
 
   return (
@@ -41,6 +43,7 @@ export default async function ProfilePostsPage({ params }: { params: Promise<{ u
       savedPostIds={savedPostIds}
       friendStatus={friendStatuses[target.id] ?? "none"}
       unreadNotificationCount={unreadNotificationCount}
+      unreadMessageCount={unreadMessageCount}
     />
   );
 }

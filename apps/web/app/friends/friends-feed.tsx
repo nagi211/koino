@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import type { FriendshipStatus, FriendshipWithProfile, PostWithAuthor, Profile } from "@koino/core";
+import { AccountMenu } from "../account-menu";
 import { NotificationBell } from "../notification-bell";
 import { FriendsPanel } from "../friends-panel";
 import { PostActions } from "../post-actions";
@@ -11,6 +12,7 @@ import { PostCard } from "../post-card";
 import { PostComposer } from "../post-composer";
 import { PostMenu } from "../post-menu";
 import { ReportModal } from "../report-modal";
+import { Sidebar } from "../sidebar";
 import { VouchGateModal } from "../vouch-gate-modal";
 
 function HamburgerIcon() {
@@ -30,6 +32,7 @@ export function FriendsFeed({
   initialFriends,
   initialRequests,
   unreadNotificationCount,
+  unreadMessageCount,
 }: {
   profile: Profile;
   posts: PostWithAuthor[];
@@ -39,6 +42,7 @@ export function FriendsFeed({
   initialFriends: FriendshipWithProfile[];
   initialRequests: FriendshipWithProfile[];
   unreadNotificationCount: number;
+  unreadMessageCount: number;
 }) {
   const likedSet = new Set(likedPostIds);
   const savedSet = new Set(savedPostIds);
@@ -84,6 +88,13 @@ export function FriendsFeed({
 
   return (
     <div className="fixed inset-0 flex">
+      <Sidebar
+        profile={profile}
+        onSayHello={() => setVouchGateOpen(true)}
+        unreadNotificationCount={unreadNotificationCount}
+        unreadMessageCount={unreadMessageCount}
+        fullNav
+      />
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="relative flex shrink-0 items-center justify-between border-b border-card-border bg-background px-4 py-3 sm:px-8">
           <Link href="/" className="text-sm text-muted hover:text-foreground">
@@ -92,6 +103,10 @@ export function FriendsFeed({
           <h1 className="absolute left-1/2 -translate-x-1/2 text-lg font-bold text-foreground">Friends</h1>
           <div className="flex items-center gap-3">
             <NotificationBell profile={profile} initialUnreadCount={unreadNotificationCount} />
+            {/* Sidebar covers this from md: up — avatar menu fills the gap below that. */}
+            <div className="md:hidden">
+              <AccountMenu profile={profile} unreadMessageCount={unreadMessageCount} onOpenVouchGate={() => setVouchGateOpen(true)} />
+            </div>
             <button
               type="button"
               onClick={() => setFriendsDrawerOpen(true)}

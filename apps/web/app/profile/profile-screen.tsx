@@ -18,6 +18,7 @@ import type {
   TopFriendWithProfile,
 } from "@koino/core";
 import { createClient } from "@/lib/supabase/client";
+import { AccountMenu } from "../account-menu";
 import { Avatar } from "../avatar";
 import { Modal } from "../modal";
 import { NotificationBell } from "../notification-bell";
@@ -123,6 +124,7 @@ export function ProfileScreen({
   totalViewCount,
   initiallyLiked,
   unreadNotificationCount,
+  unreadMessageCount,
 }: {
   viewer: Profile | null;
   target: Profile;
@@ -139,6 +141,7 @@ export function ProfileScreen({
   totalViewCount: number;
   initiallyLiked: boolean;
   unreadNotificationCount: number;
+  unreadMessageCount: number;
 }) {
   const theme = resolveTheme(target.theme);
   const pageStyle: React.CSSProperties = theme.pageBackground
@@ -494,6 +497,13 @@ export function ProfileScreen({
                 )}
               </div>
             ))}
+          {/* Every other page gets Sidebar (desktop) + this same avatar menu
+              (mobile) for cross-page nav — profile already has its own themed
+              navbar instead of Sidebar, so this stays visible at every width
+              rather than switching away at desktop like elsewhere. */}
+          {viewer && !editingLayout && (
+            <AccountMenu profile={viewer} unreadMessageCount={unreadMessageCount} onOpenVouchGate={() => setVouchGateOpen(true)} />
+          )}
         </div>
       </div>
 

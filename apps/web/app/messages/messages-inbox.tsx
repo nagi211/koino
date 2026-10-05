@@ -3,10 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import type { ConversationSummary } from "@koino/core";
+import type { ConversationSummary, Profile } from "@koino/core";
+import { AccountMenu } from "../account-menu";
 import { Avatar } from "../avatar";
 import { ConversationView } from "../conversation-view";
+import { Sidebar } from "../sidebar";
 import { useMediaQuery } from "../use-media-query";
+import { VouchGateModal } from "../vouch-gate-modal";
 
 const TYPE_LABEL: Record<ConversationSummary["type"], string> = {
   dm: "Direct message",
@@ -14,7 +17,17 @@ const TYPE_LABEL: Record<ConversationSummary["type"], string> = {
   group_room: "Group room",
 };
 
-export function MessagesInbox({ conversations, viewerId }: { conversations: ConversationSummary[]; viewerId: string }) {
+export function MessagesInbox({
+  conversations,
+  profile,
+  unreadNotificationCount,
+}: {
+  conversations: ConversationSummary[];
+  profile: Profile;
+  unreadNotificationCount: number;
+}) {
+  const viewerId = profile.id;
+  const [vouchGateOpen, setVouchGateOpen] = useState(false);
   const searchParams = useSearchParams();
   const fromQuery = searchParams.get("c");
   // A specific ?c= link (e.g. from a notification) always opens straight to
@@ -37,13 +50,24 @@ export function MessagesInbox({ conversations, viewerId }: { conversations: Conv
 
   return (
     <div className="fixed inset-0 flex">
+      <Sidebar
+        profile={profile}
+        onSayHello={() => setVouchGateOpen(true)}
+        unreadNotificationCount={unreadNotificationCount}
+        unreadMessageCount={0}
+        fullNav
+      />
       <div
         className={`flex w-full shrink-0 flex-col border-r border-card-border bg-background md:flex md:w-80 ${selectedId ? "hidden" : "flex"}`}
       >
-        <div className="border-b border-card-border p-4">
+        <div className="flex items-center justify-between border-b border-card-border p-4">
           <Link href="/" className="text-xl font-bold text-foreground hover:opacity-80">
             Koino
           </Link>
+          {/* Sidebar covers this from md: up — avatar menu fills the gap below that. */}
+          <div className="md:hidden">
+            <AccountMenu profile={profile} unreadMessageCount={0} onOpenVouchGate={() => setVouchGateOpen(true)} />
+          </div>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto">
@@ -98,6 +122,8 @@ export function MessagesInbox({ conversations, viewerId }: { conversations: Conv
           <p className="p-6 text-center text-sm text-muted">Select a conversation</p>
         )}
       </div>
+
+      <VouchGateModal open={vouchGateOpen} onClose={() => setVouchGateOpen(false)} guestId={profile.id} />
     </div>
   );
 }

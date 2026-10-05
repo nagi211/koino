@@ -7,6 +7,7 @@ import {
   getMyProfile,
   getMySavedPostIds,
   getPendingFriendRequests,
+  getUnreadMessageCount,
   getUnreadNotificationCount,
 } from "@koino/core";
 import type { FriendshipStatus } from "@koino/core";
@@ -29,19 +30,22 @@ export default async function FriendsPage() {
   const friendsPromise = getFriends(supabase, profile.id);
   const pendingRequestsPromise = getPendingFriendRequests(supabase, profile.id);
   const unreadNotificationCountPromise = getUnreadNotificationCount(supabase, profile.id);
+  const unreadMessageCountPromise = getUnreadMessageCount(supabase, profile.id);
 
   const posts = await getFriendsFeed(supabase);
   const postIds = posts.map((post) => post.id);
   const authorIds = Array.from(new Set(posts.map((post) => post.author_id).filter((id) => id !== profile.id)));
 
-  const [likedPostIds, savedPostIds, friendStatuses, friends, pendingRequests, unreadNotificationCount] = await Promise.all([
-    getMyLikedPostIds(supabase, profile.id, postIds).then((set) => Array.from(set)),
-    getMySavedPostIds(supabase, profile.id, postIds).then((set) => Array.from(set)),
-    getMyFriendStatuses(supabase, profile.id, authorIds),
-    friendsPromise,
-    pendingRequestsPromise,
-    unreadNotificationCountPromise,
-  ]);
+  const [likedPostIds, savedPostIds, friendStatuses, friends, pendingRequests, unreadNotificationCount, unreadMessageCount] =
+    await Promise.all([
+      getMyLikedPostIds(supabase, profile.id, postIds).then((set) => Array.from(set)),
+      getMySavedPostIds(supabase, profile.id, postIds).then((set) => Array.from(set)),
+      getMyFriendStatuses(supabase, profile.id, authorIds),
+      friendsPromise,
+      pendingRequestsPromise,
+      unreadNotificationCountPromise,
+      unreadMessageCountPromise,
+    ]);
 
   return (
     <FriendsFeed
@@ -53,6 +57,7 @@ export default async function FriendsPage() {
       initialFriends={friends}
       initialRequests={pendingRequests}
       unreadNotificationCount={unreadNotificationCount}
+      unreadMessageCount={unreadMessageCount}
     />
   );
 }

@@ -8,6 +8,7 @@ import {
   getMyProfile,
   getMySavedPostIds,
   getPendingFamilyRequests,
+  getUnreadMessageCount,
   getUnreadNotificationCount,
 } from "@koino/core";
 import { createClient } from "@/lib/supabase/server";
@@ -29,19 +30,22 @@ export default async function FamilyPage() {
   const familyPromise = getFamily(supabase, profile.id);
   const pendingRequestsPromise = getPendingFamilyRequests(supabase, profile.id);
   const unreadNotificationCountPromise = getUnreadNotificationCount(supabase, profile.id);
+  const unreadMessageCountPromise = getUnreadMessageCount(supabase, profile.id);
 
   const posts = await getFamilyFeed(supabase);
   const postIds = posts.map((post) => post.id);
   const authorIds = Array.from(new Set(posts.map((post) => post.author_id).filter((id) => id !== profile.id)));
 
-  const [likedPostIds, savedPostIds, friendStatuses, family, pendingRequests, unreadNotificationCount] = await Promise.all([
-    getMyLikedPostIds(supabase, profile.id, postIds).then((set) => Array.from(set)),
-    getMySavedPostIds(supabase, profile.id, postIds).then((set) => Array.from(set)),
-    getMyFriendStatuses(supabase, profile.id, authorIds),
-    familyPromise,
-    pendingRequestsPromise,
-    unreadNotificationCountPromise,
-  ]);
+  const [likedPostIds, savedPostIds, friendStatuses, family, pendingRequests, unreadNotificationCount, unreadMessageCount] =
+    await Promise.all([
+      getMyLikedPostIds(supabase, profile.id, postIds).then((set) => Array.from(set)),
+      getMySavedPostIds(supabase, profile.id, postIds).then((set) => Array.from(set)),
+      getMyFriendStatuses(supabase, profile.id, authorIds),
+      familyPromise,
+      pendingRequestsPromise,
+      unreadNotificationCountPromise,
+      unreadMessageCountPromise,
+    ]);
 
   return (
     <FamilyFeed
@@ -53,6 +57,7 @@ export default async function FamilyPage() {
       initialFamily={family}
       initialRequests={pendingRequests}
       unreadNotificationCount={unreadNotificationCount}
+      unreadMessageCount={unreadMessageCount}
     />
   );
 }

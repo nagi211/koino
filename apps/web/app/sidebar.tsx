@@ -130,11 +130,17 @@ export function Sidebar({
   onSayHello,
   unreadNotificationCount,
   unreadMessageCount,
+  fullNav = false,
 }: {
   profile: Profile | null;
   onSayHello: () => void;
   unreadNotificationCount: number;
   unreadMessageCount: number;
+  /** Home hides Friends/Family here from lg: up because its own right-hand
+   * panel already covers both at that width — every other page that reuses
+   * this sidebar has no such substitute, so it needs them to stay visible at
+   * every width instead of leaving a gap at lg:+. */
+  fullNav?: boolean;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -184,7 +190,7 @@ export function Sidebar({
               Say hello
             </button>
           )}
-          <Link href="/friends" className={`${itemClass(pathname === "/friends")} lg:hidden`}>
+          <Link href="/friends" className={fullNav ? itemClass(pathname === "/friends") : `${itemClass(pathname === "/friends")} lg:hidden`}>
             <FriendsIcon />
             Friends
           </Link>
@@ -198,7 +204,7 @@ export function Sidebar({
             <UserIcon />
             Profile
           </Link>
-          <Link href="/family" className={`${itemClass(pathname === "/family")} lg:hidden`}>
+          <Link href="/family" className={fullNav ? itemClass(pathname === "/family") : `${itemClass(pathname === "/family")} lg:hidden`}>
             <FamilyIcon />
             Family
           </Link>
