@@ -9,6 +9,22 @@ import { createClient } from "@/lib/supabase/client";
 import { Avatar } from "./avatar";
 import { useUnreadMessageCount } from "./use-unread-message-count";
 
+function ChevronIcon({ open }: { open: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="16"
+      height="16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      className={`shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
+    >
+      <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 // Everything the left sidebar offers from md: up (see sidebar.tsx) — this menu
 // is the mobile/tablet stand-in for that whole panel below lg:, so it carries
 // the same set of destinations rather than just Profile/Moderation/Log out,
@@ -23,15 +39,15 @@ export function AccountMenu({
   unreadMessageCount: number;
   onOpenVouchGate: () => void;
   /** "dropdown" (default): an avatar button that toggles a floating menu —
-   * used in a page header. "inline": just the link list, always expanded,
-   * no avatar/trigger — for embedding directly inside another panel (e.g. the
-   * family/friends drawer) instead of adding a second, separate nav trigger
-   * next to it. */
+   * used in a page header. "inline": a collapsible "Menu" row embedded
+   * directly inside another panel (e.g. the family/friends drawer) instead
+   * of adding a second, separate nav trigger next to it — collapsed by
+   * default so it doesn't compete with that panel's own primary content. */
   variant?: "dropdown" | "inline";
 }) {
   const router = useRouter();
   const unreadMessageCount = useUnreadMessageCount(profile, initialUnreadMessageCount);
-  const [open, setOpen] = useState(variant === "inline");
+  const [open, setOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [isRefreshing, startLogoutTransition] = useTransition();
   const loggingOut = signingOut || isRefreshing;
@@ -71,9 +87,13 @@ export function AccountMenu({
       {variant === "dropdown" && (
         <div className="border-b border-card-border px-4 py-2 font-mono text-sm text-muted">@{profile.username}</div>
       )}
-      <Link href="/profile" onClick={close} className={itemClass}>
-        Profile
-      </Link>
+      {/* Inline mode is embedded right below a ProfileCard that already has
+       * its own "View profile" link — repeating it here would be redundant. */}
+      {variant === "dropdown" && (
+        <Link href="/profile" onClick={close} className={itemClass}>
+          Profile
+        </Link>
+      )}
       <Link href="/friends" onClick={close} className={itemClass}>
         Friends
       </Link>
@@ -121,7 +141,20 @@ export function AccountMenu({
   );
 
   if (variant === "inline") {
-    return <div className="overflow-hidden rounded-xl border border-card-border">{links}</div>;
+    return (
+      <div className="overflow-hidden rounded-xl border border-card-border">
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          aria-expanded={open}
+          className="flex w-full items-center justify-between px-4 py-2 text-left text-sm font-medium text-foreground hover:bg-input"
+        >
+          Menu
+          <ChevronIcon open={open} />
+        </button>
+        {open && <div className="border-t border-card-border">{links}</div>}
+      </div>
+    );
   }
 
   return (
