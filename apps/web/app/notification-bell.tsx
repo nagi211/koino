@@ -168,17 +168,22 @@ export function NotificationBell({
             {notifications && notifications.length > 0 && (
               <ul className="flex flex-col">
                 {notifications.map((notification) => (
-                  <li key={notification.id} className="border-b border-card-border last:border-0">
-                    <Link
-                      href={targetHref(notification)}
-                      onClick={closeDropdown}
-                      className="flex items-center gap-3 px-4 py-3 hover:bg-input"
-                    >
-                      <Avatar url={notification.actor_avatar_url} username={notification.actor_username ?? "?"} size={32} />
-                      <span className="min-w-0 flex-1 text-sm text-foreground">
-                        {notification.actor_username && <span className="font-medium">@{notification.actor_username} </span>}
-                        {TYPE_COPY[notification.type]}
-                      </span>
+                  <li key={notification.id} className="flex items-center gap-3 border-b border-card-border px-4 py-3 last:border-0 hover:bg-input">
+                    {/* A <Link> can't nest inside another <Link>, so the avatar (always
+                        the actor's own profile) and the rest of the row (wherever this
+                        notification's own action belongs — a post, a connection
+                        request, etc.) are two independent sibling links, not one link
+                        wrapping everything. */}
+                    {notification.actor_username ? (
+                      <Link href={`/profile/${notification.actor_username}`} onClick={closeDropdown} className="shrink-0">
+                        <Avatar url={notification.actor_avatar_url} username={notification.actor_username} size={32} />
+                      </Link>
+                    ) : (
+                      <Avatar url={notification.actor_avatar_url} username="?" size={32} />
+                    )}
+                    <Link href={targetHref(notification)} onClick={closeDropdown} className="min-w-0 flex-1 text-sm text-foreground">
+                      {notification.actor_username && <span className="font-medium">@{notification.actor_username} </span>}
+                      {TYPE_COPY[notification.type]}
                     </Link>
                   </li>
                 ))}

@@ -10,14 +10,17 @@ export function AddFriendButton({
   viewer,
   targetId,
   initialStatus,
+  requireAuth,
 }: {
   viewer: Profile;
   targetId: string;
   initialStatus: FriendshipStatus;
+  requireAuth: (action: () => void) => void;
 }) {
   const router = useRouter();
   const [status, setStatus] = useState(initialStatus);
   const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleClick() {
     setStatus("pending_sent");
@@ -33,9 +36,18 @@ export function AddFriendButton({
 
   async function handleMessage() {
     setPending(true);
+    setError(null);
     try {
       const conversationId = await startDmConversation(createClient(), targetId);
       router.push(`/messages?c=${conversationId}`);
+    } catch (err) {
+      // The RPC requires an active (vouched) account on the caller's side —
+      // a still-pending guest can be friends with someone (see
+      // 0038_friends_family_automatic.sql's reasoning) but can't yet message
+      // them, so requireAuth below catches that case before this ever runs.
+      // This still needs to surface anything else that goes wrong instead of
+      // leaving the tap looking like it did nothing.
+      setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
       setPending(false);
     }
@@ -43,14 +55,17 @@ export function AddFriendButton({
 
   if (status === "friends") {
     return (
-      <button
-        type="button"
-        disabled={pending}
-        onClick={handleMessage}
-        className="rounded-xl border border-card-border px-4 py-1.5 text-sm text-muted hover:text-foreground disabled:opacity-50"
-      >
-        Message
-      </button>
+      <div className="flex flex-col items-start gap-1">
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() => requireAuth(handleMessage)}
+          className="rounded-xl border border-card-border px-4 py-1.5 text-sm text-muted hover:text-foreground disabled:opacity-50"
+        >
+          Message
+        </button>
+        {error && <p className="text-xs text-danger">{error}</p>}
+      </div>
     );
   }
   if (status === "pending_received") {
