@@ -30,13 +30,17 @@ export function FriendsPanel({
   const [friends, setFriends] = useState(initialFriends);
   const [requests, setRequests] = useState(initialRequests);
   const [messaging, setMessaging] = useState<string | null>(null);
+  const [messageError, setMessageError] = useState<string | null>(null);
   const router = useRouter();
 
   async function handleMessage(friendId: string) {
     setMessaging(friendId);
+    setMessageError(null);
     try {
       const conversationId = await startDmConversation(createClient(), friendId);
       router.push(`/messages?c=${conversationId}`);
+    } catch (err) {
+      setMessageError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
       setMessaging(null);
     }
@@ -184,6 +188,7 @@ export function FriendsPanel({
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <h3 className="mb-2 text-sm font-semibold text-foreground">Friends</h3>
+        {messageError && <p className="mb-2 text-xs text-danger">{messageError}</p>}
         {friends.length === 0 ? (
           <p className="text-sm text-muted">No friends yet.</p>
         ) : (
@@ -194,14 +199,19 @@ export function FriendsPanel({
                   <Avatar url={friend.profile.avatar_url} username={friend.profile.username} size={28} />
                   <span className="truncate text-sm text-foreground">@{friend.profile.username}</span>
                 </Link>
-                <button
-                  type="button"
-                  disabled={messaging === friend.profile.id}
-                  onClick={() => handleMessage(friend.profile.id)}
-                  className="shrink-0 rounded-xl border border-card-border px-3 py-1 text-xs text-muted hover:text-foreground disabled:opacity-50"
-                >
-                  Message
-                </button>
+                {/* A guest can already message a confirmed friend (see
+                    0042_message_friends_and_family.sql) — suspended is the
+                    only status that actually blocks it. */}
+                {profile.status !== "suspended" && (
+                  <button
+                    type="button"
+                    disabled={messaging === friend.profile.id}
+                    onClick={() => handleMessage(friend.profile.id)}
+                    className="shrink-0 rounded-xl border border-card-border px-3 py-1 text-xs text-muted hover:text-foreground disabled:opacity-50"
+                  >
+                    Message
+                  </button>
+                )}
               </li>
             ))}
           </ul>

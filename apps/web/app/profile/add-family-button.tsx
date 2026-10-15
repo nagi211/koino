@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { FAMILY_RELATIONSHIP_OPTIONS, sendFamilyRequest } from "@koino/core";
+import { useRouter } from "next/navigation";
+import { FAMILY_RELATIONSHIP_OPTIONS, sendFamilyRequest, startDmConversation } from "@koino/core";
 import type { FamilyConnectionStatus, FamilyRelationship, Profile } from "@koino/core";
 import { createClient } from "@/lib/supabase/client";
 
@@ -14,10 +15,13 @@ export function AddFamilyButton({
   targetId: string;
   initialStatus: FamilyConnectionStatus;
 }) {
+  const router = useRouter();
   const [status, setStatus] = useState(initialStatus);
   const [picking, setPicking] = useState(false);
   const [relationship, setRelationship] = useState<FamilyRelationship>("cousin");
   const [pending, setPending] = useState(false);
+  const [messagePending, setMessagePending] = useState(false);
+  const [messageError, setMessageError] = useState<string | null>(null);
 
   async function handleSend() {
     setPending(true);
@@ -30,8 +34,38 @@ export function AddFamilyButton({
     }
   }
 
+  async function handleMessage() {
+    setMessagePending(true);
+    setMessageError(null);
+    try {
+      const conversationId = await startDmConversation(createClient(), targetId);
+      router.push(`/messages?c=${conversationId}`);
+    } catch (err) {
+      setMessageError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setMessagePending(false);
+    }
+  }
+
+  // Family is an automatic friend for messaging too now (see
+  // 0042_message_friends_and_family.sql) — a guest can message a confirmed
+  // family connection, suspended is the only status that actually blocks it.
   if (status === "family") {
-    return <p className="text-sm text-muted">Connected as family</p>;
+    return viewer.status === "suspended" ? (
+      <p className="text-sm text-muted">Connected as family</p>
+    ) : (
+      <div className="flex flex-col items-start gap-1">
+        <button
+          type="button"
+          disabled={messagePending}
+          onClick={handleMessage}
+          className="rounded-xl border border-card-border px-4 py-1.5 text-sm text-muted hover:text-foreground disabled:opacity-50"
+        >
+          Message
+        </button>
+        {messageError && <p className="text-xs text-danger">{messageError}</p>}
+      </div>
+    );
   }
   if (status === "pending_received") {
     return <p className="text-sm text-muted">Respond in your Family panel</p>;

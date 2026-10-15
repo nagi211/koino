@@ -10,6 +10,7 @@ import {
   removeFamilyConnection,
   searchProfiles,
   sendFamilyRequest,
+  startDmConversation,
 } from "@koino/core";
 import type { FamilyConnectionStatus, FamilyConnectionWithProfile, FamilyRelationship, Profile } from "@koino/core";
 import { createClient } from "@/lib/supabase/client";
@@ -38,7 +39,26 @@ export function FamilyPanel({
   const [requests, setRequests] = useState(initialRequests);
   const [pickingFor, setPickingFor] = useState<string | null>(null);
   const [relationship, setRelationship] = useState<FamilyRelationship>("cousin");
+  const [messaging, setMessaging] = useState<string | null>(null);
+  const [messageError, setMessageError] = useState<string | null>(null);
   const router = useRouter();
+
+  // A guest can already message a confirmed family connection (family is an
+  // automatic friend for messaging too now — see
+  // 0042_message_friends_and_family.sql); suspended is the only status that
+  // actually blocks it.
+  async function handleMessage(familyMemberId: string) {
+    setMessaging(familyMemberId);
+    setMessageError(null);
+    try {
+      const conversationId = await startDmConversation(createClient(), familyMemberId);
+      router.push(`/messages?c=${conversationId}`);
+    } catch (err) {
+      setMessageError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setMessaging(null);
+    }
+  }
 
   async function handleSearch(q: string) {
     setQuery(q);
@@ -226,6 +246,7 @@ export function FamilyPanel({
             Family tree
           </Link>
         </div>
+        {messageError && <p className="mb-2 text-xs text-danger">{messageError}</p>}
         {family.length === 0 ? (
           <p className="text-sm text-muted">No family connections yet.</p>
         ) : (
@@ -238,13 +259,25 @@ export function FamilyPanel({
                     @{f.profile.username} <span className="text-muted">· {f.relationshipLabel}</span>
                   </span>
                 </Link>
-                <button
-                  type="button"
-                  onClick={() => handleRemove(f.connection_id)}
-                  className="shrink-0 rounded-xl border border-card-border px-3 py-1 text-xs text-muted hover:text-foreground"
-                >
-                  Remove
-                </button>
+                <div className="flex shrink-0 gap-1">
+                  {profile.status !== "suspended" && (
+                    <button
+                      type="button"
+                      disabled={messaging === f.profile.id}
+                      onClick={() => handleMessage(f.profile.id)}
+                      className="rounded-xl border border-card-border px-3 py-1 text-xs text-muted hover:text-foreground disabled:opacity-50"
+                    >
+                      Message
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => handleRemove(f.connection_id)}
+                    className="rounded-xl border border-card-border px-3 py-1 text-xs text-muted hover:text-foreground"
+                  >
+                    Remove
+                  </button>
+                </div>
               </li>
             ))}
           </ul>

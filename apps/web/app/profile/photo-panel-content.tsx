@@ -248,7 +248,7 @@ function ActionSlot({
         onToggle={onLikeToggle}
         requireAuth={requireAuth}
       />
-      <AddFriendButton viewer={viewer} targetId={target.id} initialStatus={friendStatus} requireAuth={requireAuth} />
+      <AddFriendButton viewer={viewer} targetId={target.id} initialStatus={friendStatus} />
       <AddFamilyButton viewer={viewer} targetId={target.id} initialStatus={familyStatus} />
     </div>
   );
