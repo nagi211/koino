@@ -131,40 +131,87 @@ function layoutTree(viewerId: string, edges: FamilyTreeEdge[]) {
     children.get(p)!.push(id);
   }
 
-  // A spouse should sit right next to their partner, not wherever the
-  // leaf-weighted tidy-tree slice happens to land them. A spouse with no
-  // separately-connected ancestors of their own inherits their partner's
-  // slice-parent through the peer-resolution above (or is a root alongside
-  // them, if the partner has none either) — either way they end up in the
-  // same array as their partner, just in arbitrary BFS-visit order.
-  // assignSlot divides a parent's (or the whole tree's) slot range in array
-  // order, so reordering each array to put spouse pairs next to each other
-  // is enough to get them adjacent in the final x-position too, without
-  // touching the width/slicing math itself.
+  // A spouse or sibling should sit right next to the person they're close
+  // to, not wherever the leaf-weighted tidy-tree slice happens to land them.
+  // Someone with no separately-connected ancestors of their own (e.g. a
+  // sibling with no stored link to the shared parent, or an in-law who only
+  // connects into the tree via their own sibling/spouse) inherits their
+  // relative's slice-parent through the peer-resolution above — so they end
+  // up in the same array as that relative, just in arbitrary BFS-visit
+  // order. This is what let Jofet (only connected to his sister Alizza)
+  // render next to an unrelated person instead of next to her, with the
+  // connector line stretching across the gap between them to reach his
+  // actual position. assignSlot divides a parent's (or the whole tree's)
+  // slot range in array order, so reordering each array to cluster close
+  // relatives together is enough to get them adjacent in the final
+  // x-position too, without touching the width/slicing math itself.
   const spouseOf = new Map<string, string>();
+  const siblingsOf = new Map<string, string[]>();
   for (const edge of edges) {
     if (edge.relationship === "spouse") {
       spouseOf.set(edge.person_a, edge.person_b);
       spouseOf.set(edge.person_b, edge.person_a);
+    } else if (edge.relationship === "sister" || edge.relationship === "brother") {
+      if (!siblingsOf.has(edge.person_a)) siblingsOf.set(edge.person_a, []);
+      if (!siblingsOf.has(edge.person_b)) siblingsOf.set(edge.person_b, []);
+      siblingsOf.get(edge.person_a)!.push(edge.person_b);
+      siblingsOf.get(edge.person_b)!.push(edge.person_a);
     }
   }
-  function withSpousesAdjacent(ids: string[]): string[] {
-    const reordered: string[] = [];
-    const remaining = new Set(ids);
-    for (const id of ids) {
-      if (!remaining.has(id)) continue;
-      reordered.push(id);
-      remaining.delete(id);
+  // Within one slice, clusters everyone connected via spouse/sibling edges
+  // together (a BFS connected component over just those two relationship
+  // types), instead of leaving them at whatever order the peer-resolution
+  // pass above happened to produce. When the cluster contains a married
+  // couple, it's ordered as "my side, me, my spouse, my spouse's side" (each
+  // partner's own siblings flank their own side) rather than left in
+  // arbitrary BFS order — a pure sibling group with no spouse in it just
+  // stays contiguous, order unchanged.
+  function withCloseRelativesAdjacent(ids: string[]): string[] {
+    const idSet = new Set(ids);
+    function closeNeighborsOf(id: string): string[] {
       const spouseId = spouseOf.get(id);
-      if (spouseId && remaining.has(spouseId)) {
-        reordered.push(spouseId);
-        remaining.delete(spouseId);
+      return [...(spouseId ? [spouseId] : []), ...(siblingsOf.get(id) ?? [])].filter((n) => idSet.has(n));
+    }
+    const placed = new Set<string>();
+    const reordered: string[] = [];
+    for (const start of ids) {
+      if (placed.has(start)) continue;
+      const cluster: string[] = [];
+      const seen = new Set([start]);
+      const queue = [start];
+      while (queue.length > 0) {
+        const current = queue.shift()!;
+        cluster.push(current);
+        for (const next of closeNeighborsOf(current)) {
+          if (!seen.has(next)) {
+            seen.add(next);
+            queue.push(next);
+          }
+        }
+      }
+      const couple = cluster.find((id) => spouseOf.has(id) && cluster.includes(spouseOf.get(id)!));
+      const ordered = couple
+        ? (() => {
+            const partner = spouseOf.get(couple)!;
+            const mySiblings = cluster.filter((id) => id !== couple && id !== partner && (siblingsOf.get(couple) ?? []).includes(id));
+            const partnerSiblings = cluster.filter(
+              (id) => id !== couple && id !== partner && (siblingsOf.get(partner) ?? []).includes(id)
+            );
+            const rest = cluster.filter((id) => ![couple, partner, ...mySiblings, ...partnerSiblings].includes(id));
+            return [...mySiblings, couple, partner, ...partnerSiblings, ...rest];
+          })()
+        : cluster;
+      for (const id of ordered) {
+        if (!placed.has(id)) {
+          placed.add(id);
+          reordered.push(id);
+        }
       }
     }
     return reordered;
   }
   for (const [parentId, kids] of children) {
-    children.set(parentId, withSpousesAdjacent(kids));
+    children.set(parentId, withCloseRelativesAdjacent(kids));
   }
 
   const leafCountCache = new Map<string, number>();
@@ -190,10 +237,11 @@ function layoutTree(viewerId: string, edges: FamilyTreeEdge[]) {
       cursor += width;
     }
   }
-  // Same adjacency reordering as above, for the case where neither spouse has
-  // any connected ancestors yet — they're both roots instead of siblings
-  // under a shared parent, but the same fix applies the same way.
-  const roots = withSpousesAdjacent(Array.from(visited).filter((id) => sliceParent.get(id) === null));
+  // Same adjacency reordering as above, for the case where a close-relative
+  // cluster has no connected ancestors at all yet — they're all roots
+  // instead of children under a shared parent, but the same fix applies the
+  // same way.
+  const roots = withCloseRelativesAdjacent(Array.from(visited).filter((id) => sliceParent.get(id) === null));
   const totalWidth = roots.reduce((sum, root) => sum + leafCount(root), 0);
   let rootCursor = 0;
   for (const root of roots) {
@@ -323,19 +371,20 @@ export function FamilyTreeView({ viewer, edges, profiles }: { viewer: Profile; e
                     {edges.map((edge) => {
                       const g = geometry(edge);
                       if (!g) return null;
-                      // A spouse line reads as "married into the family," not
-                      // "same generic same-generation relationship as a
-                      // sibling or cousin" — the plain gray line both of
-                      // those share was exactly why a spouse looked like a
-                      // sibling at a glance. Accent-colored and heavier here
-                      // is the one deliberately different case.
-                      const isSpouse = edge.relationship === "spouse";
+                      // A spouse or sibling line reads as immediate family,
+                      // not "same generic same-generation relationship as a
+                      // cousin" — the plain gray line all three used to share
+                      // was exactly why a spouse (and now a sibling) looked
+                      // like a cousin at a glance. Accent-colored and heavier
+                      // here; the text label (SPOUSE vs SISTER/BROTHER) is
+                      // what tells those two apart from each other.
+                      const isCloseFamily = edge.relationship === "spouse" || edge.relationship === "sister" || edge.relationship === "brother";
                       return (
                         <path
                           key={edge.connection_id}
                           d={g.path}
-                          className={isSpouse ? "stroke-olive-dark" : "stroke-card-border"}
-                          strokeWidth={isSpouse ? 2.5 : 1.5}
+                          className={isCloseFamily ? "stroke-olive-dark" : "stroke-card-border"}
+                          strokeWidth={isCloseFamily ? 2.5 : 1.5}
                           fill="none"
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -347,12 +396,12 @@ export function FamilyTreeView({ viewer, edges, profiles }: { viewer: Profile; e
                   {edges.map((edge) => {
                     const g = geometry(edge);
                     if (!g) return null;
-                    const isSpouse = edge.relationship === "spouse";
+                    const isCloseFamily = edge.relationship === "spouse" || edge.relationship === "sister" || edge.relationship === "brother";
                     return (
                       <span
                         key={edge.connection_id}
                         className={`absolute -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full border bg-background px-2 py-0.5 text-[9px] font-medium uppercase tracking-wide ${
-                          isSpouse ? "border-olive-dark text-olive-dark" : "border-card-border text-muted"
+                          isCloseFamily ? "border-olive-dark text-olive-dark" : "border-card-border text-muted"
                         }`}
                         style={{ left: g.labelX, top: g.labelY }}
                       >
