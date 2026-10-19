@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { FAMILY_RELATIONSHIP_LABEL, inverseFamilyRelationshipLabel } from "@koino/core";
 import type { FamilyRelationship, FamilyTreeEdge, Profile } from "@koino/core";
@@ -76,8 +77,7 @@ type PositionedNode = { id: string; x: number; y: number; generation: number };
  * (genuine root ancestors) anchors a subtree-size-weighted tidy-tree slice,
  * same idea as before, just over the corrected tree.
  */
-function layoutTree(viewerId: string, edges: FamilyTreeEdge[]) {
-  const generation = new Map<string, number>([[viewerId, 0]]);
+function layoutTree(viewerId: string, edges: FamilyTreeEdge[], expandedSpouses: Set<string>) {
   const neighbors = new Map<string, { id: string; edge: FamilyTreeEdge }[]>();
   for (const edge of edges) {
     if (!neighbors.has(edge.person_a)) neighbors.set(edge.person_a, []);
@@ -86,12 +86,53 @@ function layoutTree(viewerId: string, edges: FamilyTreeEdge[]) {
     neighbors.get(edge.person_b)!.push({ id: edge.person_a, edge });
   }
 
+  // The viewer's own spouse(s), and — for each — every node reachable from
+  // the viewer *only* by going through that spouse (their own parents, their
+  // own siblings, etc., as opposed to the viewer's own blood relatives).
+  // That whole side is collapsed by default (skipped in the traversal below
+  // unless its spouse is in `expandedSpouses`) instead of always rendering
+  // every in-law in full — tapping the spouse's own "+" reveals it instead.
+  const viewerSpouses = (neighbors.get(viewerId) ?? []).filter((n) => n.edge.relationship === "spouse").map((n) => n.id);
+  const inLawOwner = new Map<string, string>();
+  for (const spouseId of viewerSpouses) {
+    const reachableWithoutSpouse = new Set([viewerId]);
+    const withoutQueue = [viewerId];
+    while (withoutQueue.length > 0) {
+      const current = withoutQueue.shift()!;
+      for (const { id: next } of neighbors.get(current) ?? []) {
+        if (next === spouseId || reachableWithoutSpouse.has(next)) continue;
+        reachableWithoutSpouse.add(next);
+        withoutQueue.push(next);
+      }
+    }
+    // Walk outward from the spouse (never back through the viewer); a node
+    // that's ALSO reachable without the spouse is shared with the viewer's
+    // own blood line (not a pure in-law), so it's left alone and not
+    // traversed further here — its own branch is already covered by the
+    // main BFS below.
+    const seenViaSpouse = new Set([spouseId]);
+    const viaSpouseQueue = [spouseId];
+    while (viaSpouseQueue.length > 0) {
+      const current = viaSpouseQueue.shift()!;
+      for (const { id: next } of neighbors.get(current) ?? []) {
+        if (next === viewerId || seenViaSpouse.has(next)) continue;
+        seenViaSpouse.add(next);
+        if (reachableWithoutSpouse.has(next)) continue;
+        inLawOwner.set(next, spouseId);
+        viaSpouseQueue.push(next);
+      }
+    }
+  }
+
+  const generation = new Map<string, number>([[viewerId, 0]]);
   const visited = new Set([viewerId]);
   const queue = [viewerId];
   while (queue.length > 0) {
     const current = queue.shift()!;
     for (const { id: next, edge } of neighbors.get(current) ?? []) {
       if (visited.has(next)) continue;
+      const owner = inLawOwner.get(next);
+      if (owner && !expandedSpouses.has(owner)) continue;
       visited.add(next);
       const delta = GENERATION_DELTA[edge.relationship];
       const currentGen = generation.get(current)!;
@@ -193,6 +234,24 @@ function layoutTree(viewerId: string, edges: FamilyTreeEdge[]) {
       const ordered = couple
         ? (() => {
             const partner = spouseOf.get(couple)!;
+            // When the viewer is one half of this couple, their spouse (and
+            // the spouse's own siblings) goes on the viewer's LEFT instead
+            // of the usual right — confirmed preference, so the viewer's own
+            // side stays the uncluttered "default" half of the tree and the
+            // spouse's side is the one that expands outward from the
+            // boundary between them.
+            if (couple === viewerId || partner === viewerId) {
+              const theViewer = couple === viewerId ? couple : partner;
+              const spouseId = couple === viewerId ? partner : couple;
+              const mySiblings = cluster.filter(
+                (id) => id !== theViewer && id !== spouseId && (siblingsOf.get(theViewer) ?? []).includes(id)
+              );
+              const herSiblings = cluster.filter(
+                (id) => id !== theViewer && id !== spouseId && (siblingsOf.get(spouseId) ?? []).includes(id)
+              );
+              const rest = cluster.filter((id) => ![theViewer, spouseId, ...mySiblings, ...herSiblings].includes(id));
+              return [...herSiblings, spouseId, theViewer, ...mySiblings, ...rest];
+            }
             const mySiblings = cluster.filter((id) => id !== couple && id !== partner && (siblingsOf.get(couple) ?? []).includes(id));
             const partnerSiblings = cluster.filter(
               (id) => id !== couple && id !== partner && (siblingsOf.get(partner) ?? []).includes(id)
@@ -260,13 +319,28 @@ function layoutTree(viewerId: string, edges: FamilyTreeEdge[]) {
     generation: generation.get(id)!,
   }));
 
-  return { nodes, minGen, maxGen };
+  // Every spouse that actually has a hideable side — used to decide which
+  // card(s) get the expand/collapse toggle at all (a spouse with no further
+  // connected relatives has nothing to expand).
+  const expandableSpouses = new Set(inLawOwner.values());
+
+  return { nodes, minGen, maxGen, expandableSpouses };
 }
 
 export function FamilyTreeView({ viewer, edges, profiles }: { viewer: Profile; edges: FamilyTreeEdge[]; profiles: Profile[] }) {
   const profileById = new Map(profiles.map((p) => [p.id, p]));
-  const { nodes, minGen, maxGen } = layoutTree(viewer.id, edges);
+  const [expandedSpouses, setExpandedSpouses] = useState<Set<string>>(new Set());
+  const { nodes, minGen, maxGen, expandableSpouses } = layoutTree(viewer.id, edges, expandedSpouses);
   const nodeById = new Map(nodes.map((n) => [n.id, n]));
+
+  function toggleExpanded(spouseId: string) {
+    setExpandedSpouses((prev) => {
+      const next = new Set(prev);
+      if (next.has(spouseId)) next.delete(spouseId);
+      else next.add(spouseId);
+      return next;
+    });
+  }
 
   const rows = new Map<number, PositionedNode[]>();
   for (const node of nodes) {
@@ -430,31 +504,48 @@ export function FamilyTreeView({ viewer, edges, profiles }: { viewer: Profile; e
                 tag = inverseFamilyRelationshipLabel(directEdge.relationship, requester);
               }
 
+              const isExpandable = expandableSpouses.has(node.id);
+              const isExpanded = expandedSpouses.has(node.id);
+
               return (
-                <Link
-                  key={node.id}
-                  href={`/profile/${person.username}`}
-                  className={`absolute flex flex-col items-center gap-1.5 rounded-2xl border px-2.5 py-3 text-center shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
-                    isViewer ? "border-olive-dark bg-olive/10" : "border-card-border bg-card"
-                  }`}
-                  style={{ left: node.x + offsetX, top: node.y + cardOffsetY, width: CARD_WIDTH }}
-                >
-                  <Avatar
-                    url={person.avatar_url}
-                    username={person.username}
-                    size={AVATAR_SIZE}
-                    borderWidth={isViewer ? 2 : 0}
-                    borderColor="var(--olive-dark)"
-                  />
-                  <span className="line-clamp-2 text-xs font-semibold leading-tight text-foreground">
-                    {person.display_name || `@${person.username}`}
-                  </span>
-                  {isViewer ? (
-                    <span className="rounded-full bg-olive-dark px-2 py-0.5 text-[9px] font-medium uppercase tracking-wide text-white">You</span>
-                  ) : tag ? (
-                    <span className="rounded-full bg-input px-2 py-0.5 text-[9px] font-medium uppercase tracking-wide text-muted">{tag}</span>
-                  ) : null}
-                </Link>
+                <div key={node.id} className="absolute" style={{ left: node.x + offsetX, top: node.y + cardOffsetY, width: CARD_WIDTH }}>
+                  <Link
+                    href={`/profile/${person.username}`}
+                    className={`flex flex-col items-center gap-1.5 rounded-2xl border px-2.5 py-3 text-center shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
+                      isViewer ? "border-olive-dark bg-olive/10" : "border-card-border bg-card"
+                    }`}
+                  >
+                    <Avatar
+                      url={person.avatar_url}
+                      username={person.username}
+                      size={AVATAR_SIZE}
+                      borderWidth={isViewer ? 2 : 0}
+                      borderColor="var(--olive-dark)"
+                    />
+                    <span className="line-clamp-2 text-xs font-semibold leading-tight text-foreground">
+                      {person.display_name || `@${person.username}`}
+                    </span>
+                    {isViewer ? (
+                      <span className="rounded-full bg-olive-dark px-2 py-0.5 text-[9px] font-medium uppercase tracking-wide text-white">You</span>
+                    ) : tag ? (
+                      <span className="rounded-full bg-input px-2 py-0.5 text-[9px] font-medium uppercase tracking-wide text-muted">{tag}</span>
+                    ) : null}
+                  </Link>
+                  {/* Separate from the card's own Link (can't nest a button
+                      inside an anchor) — their family is hidden by default
+                      (see layoutTree's inLawOwner) until this is tapped. */}
+                  {isExpandable && (
+                    <button
+                      type="button"
+                      onClick={() => toggleExpanded(node.id)}
+                      aria-label={isExpanded ? `Hide ${person.display_name || person.username}'s family` : `Show ${person.display_name || person.username}'s family`}
+                      aria-expanded={isExpanded}
+                      className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full border border-olive-dark bg-background text-sm font-medium leading-none text-olive-dark shadow-sm hover:bg-olive/10"
+                    >
+                      {isExpanded ? "−" : "+"}
+                    </button>
+                  )}
+                </div>
               );
             })}
           </div>
