@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import type { FriendshipStatus, FriendshipWithProfile, PostWithAuthor, Profile } from "@koino/core";
+import { FeedSwitcherTabs } from "../feed-switcher-tabs";
 import { NotificationBell } from "../notification-bell";
 import { FriendsPanel } from "../friends-panel";
 import { PostActions } from "../post-actions";
@@ -155,12 +156,16 @@ export function FriendsFeed({
           )}
         </ul>
 
+        <FeedSwitcherTabs profile={profile} />
+
         {canPost && (
+          // bottom-20 clears FeedSwitcherTabs on mobile (md:hidden, so this
+          // reverts to the original bottom-6 once it's gone at md: up).
           <button
             type="button"
             onClick={() => setComposerOpen(true)}
             aria-label="New friends post"
-            className="fixed bottom-6 right-6 flex h-14 w-14 items-center justify-center rounded-full bg-olive-dark text-3xl leading-none text-white shadow-lg transition hover:brightness-105"
+            className="fixed bottom-20 right-6 flex h-14 w-14 items-center justify-center rounded-full bg-olive-dark text-3xl leading-none text-white shadow-lg transition hover:brightness-105 md:bottom-6"
           >
             +
           </button>

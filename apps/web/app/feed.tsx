@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { FriendshipStatus, PostWithAuthor, Profile, StoryWithAuthor } from "@koino/core";
 import { AccountMenu } from "./account-menu";
 import { AuthModal } from "./auth-modal";
+import { FeedSwitcherTabs } from "./feed-switcher-tabs";
 import { NotificationBell } from "./notification-bell";
 import { PostActions } from "./post-actions";
 import { PostCard } from "./post-card";
@@ -171,11 +172,15 @@ export function Feed({
         )}
       </ul>
 
+      <FeedSwitcherTabs profile={profile} />
+
+      {/* bottom-20 clears FeedSwitcherTabs on mobile (md:hidden, so this
+          reverts to the original bottom-6 once it's gone at md: up). */}
       <button
         type="button"
         onClick={() => requireAuth(() => setComposerOpen(true))}
         aria-label="New post"
-        className="fixed bottom-6 right-6 flex h-14 w-14 items-center justify-center rounded-full bg-olive-dark text-3xl leading-none text-white shadow-lg transition hover:brightness-105"
+        className="fixed bottom-20 right-6 flex h-14 w-14 items-center justify-center rounded-full bg-olive-dark text-3xl leading-none text-white shadow-lg transition hover:brightness-105 md:bottom-6"
       >
         +
       </button>
