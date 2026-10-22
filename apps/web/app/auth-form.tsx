@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { signIn, signUp, signInSchema, signUpSchema } from "@koino/core";
+import { requestPasswordReset, requestPasswordResetSchema, signIn, signUp, signInSchema, signUpSchema } from "@koino/core";
 import { createClient } from "@/lib/supabase/client";
 
 function EyeIcon() {
@@ -32,7 +32,7 @@ export function AuthForm({
   onSuccess?: () => void;
 } = {}) {
   const router = useRouter();
-  const [mode, setMode] = useState<"sign-in" | "sign-up">(initialMode);
+  const [mode, setMode] = useState<"sign-in" | "sign-up" | "forgot-password">(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -40,6 +40,7 @@ export function AuthForm({
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [resetEmailSent, setResetEmailSent] = useState(false);
   // router.refresh() re-fetches everything server-rendered but doesn't await —
   // without this, the caller (e.g. AuthModal) closed immediately on the old,
   // still-signed-out page underneath, which sat frozen until the refresh
@@ -57,7 +58,7 @@ export function AuthForm({
   }, [isRefreshing, onSuccess]);
 
   function validateField(field: "username" | "email" | "password", value: string) {
-    const schema = mode === "sign-up" ? signUpSchema : signInSchema;
+    const schema = mode === "sign-up" ? signUpSchema : mode === "forgot-password" ? requestPasswordResetSchema : signInSchema;
     const shape = schema.shape as Record<string, { safeParse: (v: string) => { success: boolean; error?: { issues: { message: string }[] } } }>;
     const fieldSchema = shape[field];
     if (!fieldSchema) return;
@@ -80,6 +81,28 @@ export function AuthForm({
     setFormError(null);
 
     const client = createClient();
+
+    if (mode === "forgot-password") {
+      const parsed = requestPasswordResetSchema.safeParse({ email });
+      if (!parsed.success) {
+        setFieldErrors({ email: parsed.error.issues[0]?.message ?? "Invalid email" });
+        return;
+      }
+      setPending(true);
+      try {
+        // Routes through /auth/callback first — that's what actually
+        // establishes the session the reset-password page needs; the email
+        // link can't sign the browser in on its own.
+        await requestPasswordReset(client, parsed.data.email, `${window.location.origin}/auth/callback?next=/reset-password`);
+        setResetEmailSent(true);
+      } catch (err) {
+        setFormError(err instanceof Error ? err.message : "Something went wrong");
+      } finally {
+        setPending(false);
+      }
+      return;
+    }
+
     const parsed =
       mode === "sign-up"
         ? signUpSchema.safeParse({ email, password, username })
@@ -113,10 +136,62 @@ export function AuthForm({
     }
   }
 
+  function switchMode(next: "sign-in" | "sign-up" | "forgot-password") {
+    setMode(next);
+    setFieldErrors({});
+    setFormError(null);
+    setResetEmailSent(false);
+  }
+
   const submitting = pending || isRefreshing;
 
   const inputClasses =
     "w-full rounded-xl border border-card-border bg-input px-4 py-3 text-foreground placeholder:text-muted outline-none transition focus:border-olive-dark focus:ring-2 focus:ring-olive/50";
+
+  if (mode === "forgot-password") {
+    return (
+      <form onSubmit={handleSubmit} className="flex w-full flex-col gap-3">
+        <h3 className="text-sm font-semibold text-foreground">Reset your password</h3>
+
+        {resetEmailSent ? (
+          <p className="text-sm text-olive-dark">
+            If an account exists for {email}, a reset link is on its way — check your email.
+          </p>
+        ) : (
+          <>
+            <p className="text-xs text-muted">We&rsquo;ll email you a link to set a new password.</p>
+            <div className="flex flex-col gap-1">
+              <input
+                className={inputClasses}
+                placeholder="Email"
+                type="email"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  validateField("email", e.target.value);
+                }}
+              />
+              {fieldErrors.email && <p className="text-sm text-danger">{fieldErrors.email}</p>}
+            </div>
+
+            {formError && <p className="text-sm text-danger">{formError}</p>}
+
+            <button
+              type="submit"
+              disabled={submitting}
+              className="mt-1 w-full rounded-xl bg-olive-dark px-4 py-3 font-medium text-white shadow-md transition hover:brightness-105 disabled:opacity-50"
+            >
+              {submitting ? "Sending…" : "Send reset link"}
+            </button>
+          </>
+        )}
+
+        <button type="button" onClick={() => switchMode("sign-in")} className="text-left text-xs text-olive-dark hover:underline">
+          ← Back to sign in
+        </button>
+      </form>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} className="flex w-full flex-col gap-3">
@@ -124,14 +199,14 @@ export function AuthForm({
         <button
           type="button"
           className={mode === "sign-up" ? "font-semibold text-foreground underline underline-offset-4" : "text-muted"}
-          onClick={() => setMode("sign-up")}
+          onClick={() => switchMode("sign-up")}
         >
           Sign up
         </button>
         <button
           type="button"
           className={mode === "sign-in" ? "font-semibold text-foreground underline underline-offset-4" : "text-muted"}
-          onClick={() => setMode("sign-in")}
+          onClick={() => switchMode("sign-in")}
         >
           Sign in
         </button>
@@ -186,6 +261,15 @@ export function AuthForm({
           </button>
         </div>
         {fieldErrors.password && <p className="text-sm text-danger">{fieldErrors.password}</p>}
+        {mode === "sign-in" && (
+          <button
+            type="button"
+            onClick={() => switchMode("forgot-password")}
+            className="self-end text-xs text-olive-dark hover:underline"
+          >
+            Forgot password?
+          </button>
+        )}
       </div>
 
       {formError && <p className="text-sm text-danger">{formError}</p>}

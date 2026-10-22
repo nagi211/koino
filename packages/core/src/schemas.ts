@@ -18,6 +18,18 @@ export const signInSchema = z.object({
 });
 export type SignInInput = z.infer<typeof signInSchema>;
 
+export const requestPasswordResetSchema = z.object({
+  email: z.string().email(),
+});
+export type RequestPasswordResetInput = z.infer<typeof requestPasswordResetSchema>;
+
+// Same rule as signUpSchema's password — a reset shouldn't let someone land
+// on a weaker password than signup would've required in the first place.
+export const updatePasswordSchema = z.object({
+  password: z.string().min(8, "Password must be at least 8 characters"),
+});
+export type UpdatePasswordInput = z.infer<typeof updatePasswordSchema>;
+
 export const POST_BACKGROUNDS = ["sunrise", "ocean", "meadow", "berry", "dusk"] as const;
 export type PostBackground = (typeof POST_BACKGROUNDS)[number];
 

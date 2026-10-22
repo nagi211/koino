@@ -23,6 +23,21 @@ export async function signOut(client: SupabaseClient<Database>) {
   if (error) throw error;
 }
 
+/** Sends a reset-password email with a link back to `redirectTo` — supabase's
+ * own throttling/validity window handles abuse, nothing custom needed here. */
+export async function requestPasswordReset(client: SupabaseClient<Database>, email: string, redirectTo: string) {
+  const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo });
+  if (error) throw error;
+}
+
+/** Only works while the caller holds the short-lived recovery session the
+ * reset-password email link establishes (see apps/web/app/auth/callback) —
+ * supabase rejects this otherwise. */
+export async function updatePassword(client: SupabaseClient<Database>, password: string) {
+  const { error } = await client.auth.updateUser({ password });
+  if (error) throw error;
+}
+
 export async function getMyProfile(client: SupabaseClient<Database>): Promise<Profile | null> {
   const {
     data: { user },
