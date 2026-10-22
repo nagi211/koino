@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { requestPasswordReset, requestPasswordResetSchema, signIn, signUp, signInSchema, signUpSchema } from "@koino/core";
 import { createClient } from "@/lib/supabase/client";
@@ -283,10 +284,23 @@ export function AuthForm({
       </button>
 
       {mode === "sign-up" && (
-        <p className="text-xs text-muted">
-          New accounts start as a guest so you can look around. When you&rsquo;re ready, say hello to request to talk
-          with a community leader.
-        </p>
+        <>
+          <p className="text-xs text-muted">
+            New accounts start as a guest so you can look around. When you&rsquo;re ready, say hello to request to talk
+            with a community leader.
+          </p>
+          <p className="text-xs text-muted">
+            By creating an account, you agree to our{" "}
+            <Link href="/terms" target="_blank" className="text-olive-dark hover:underline">
+              Terms
+            </Link>{" "}
+            and{" "}
+            <Link href="/privacy" target="_blank" className="text-olive-dark hover:underline">
+              Privacy Policy
+            </Link>
+            .
+          </p>
+        </>
       )}
     </form>
   );
