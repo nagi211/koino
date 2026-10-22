@@ -42,6 +42,11 @@ export function AuthForm({
   const [formError, setFormError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [resetEmailSent, setResetEmailSent] = useState(false);
+  // Honeypot: invisible to a real person (hidden off-screen, never tab-
+  // focusable), but a bot that blindly fills every input on the form
+  // usually fills this too — a non-empty value means skip the real signup
+  // without saying why, rather than give a bot feedback on what caught it.
+  const [website, setWebsite] = useState("");
   // router.refresh() re-fetches everything server-rendered but doesn't await —
   // without this, the caller (e.g. AuthModal) closed immediately on the old,
   // still-signed-out page underneath, which sat frozen until the refresh
@@ -119,9 +124,24 @@ export function AuthForm({
       return;
     }
 
+    if (mode === "sign-up" && website) {
+      // Honeypot tripped — pretend nothing happened instead of calling
+      // signUp or explaining why.
+      return;
+    }
+
     setPending(true);
     try {
       if (mode === "sign-up") {
+        // IP-based pre-check, server-side (see api/signup-guard/route.ts) —
+        // has to happen before signUp itself, not after, so a blocked
+        // attempt never even reaches supabase.
+        const guardRes = await fetch("/api/signup-guard", { method: "POST" });
+        const guard = (await guardRes.json()) as { ok: boolean; error?: string };
+        if (!guard.ok) {
+          setFormError(guard.error ?? "Too many accounts created recently — please try again later.");
+          return;
+        }
         await signUp(client, parsed.data as { email: string; password: string; username: string });
       } else {
         await signIn(client, parsed.data as { email: string; password: string });
@@ -212,6 +232,19 @@ export function AuthForm({
           Sign in
         </button>
       </div>
+
+      {mode === "sign-up" && (
+        <input
+          type="text"
+          name="website"
+          value={website}
+          onChange={(e) => setWebsite(e.target.value)}
+          tabIndex={-1}
+          autoComplete="off"
+          aria-hidden="true"
+          className="absolute left-[-9999px] top-auto h-px w-px overflow-hidden"
+        />
+      )}
 
       {mode === "sign-up" && (
         <div className="flex flex-col gap-1">

@@ -426,6 +426,7 @@ export type Database = {
         Returns: { sender_id: string; username: string; avatar_url: string | null }[];
       };
       get_family_tree: { Args: { max_depth: number }; Returns: FamilyTreeEdge[] };
+      check_and_record_signup_attempt: { Args: { p_ip: string; p_limit: number; p_window_minutes: number }; Returns: boolean };
     };
   };
 };
