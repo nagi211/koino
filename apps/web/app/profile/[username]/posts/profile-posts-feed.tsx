@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import type { FriendshipStatus, PostWithAuthor, Profile } from "@koino/core";
 import { AccountMenu } from "../../../account-menu";
+import { EditPostModal } from "../../../edit-post-modal";
 import { NotificationBell } from "../../../notification-bell";
 import { PostActions } from "../../../post-actions";
 import { PostCard } from "../../../post-card";
@@ -34,6 +35,7 @@ export function ProfilePostsFeed({
   const likedSet = new Set(likedPostIds);
   const savedSet = new Set(savedPostIds);
   const [reportTarget, setReportTarget] = useState<PostWithAuthor | null>(null);
+  const [editTarget, setEditTarget] = useState<PostWithAuthor | null>(null);
   const [vouchGateOpen, setVouchGateOpen] = useState(false);
 
   // Same uniform rule as every other feed (public/family/friends): comments
@@ -104,6 +106,7 @@ export function ProfilePostsFeed({
                       initialFriendStatus={friendStatus}
                       requireAuth={requireAuth}
                       onReport={() => requireAuth(() => setReportTarget(post))}
+                      onEdit={() => setEditTarget(post)}
                       lightText={post.type === "text" && !!post.background}
                     />
                   }
@@ -119,6 +122,8 @@ export function ProfilePostsFeed({
         </ul>
 
         <VouchGateModal open={vouchGateOpen} onClose={() => setVouchGateOpen(false)} guestId={profile.id} />
+
+        {editTarget && <EditPostModal key={editTarget.id} post={editTarget} onClose={() => setEditTarget(null)} />}
 
         {reportTarget && (
           <ReportModal

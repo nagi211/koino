@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import type { FamilyConnectionWithProfile, FriendshipStatus, PostWithAuthor, Profile } from "@koino/core";
+import { EditPostModal } from "../edit-post-modal";
 import { FeedSwitcherTabs } from "../feed-switcher-tabs";
 import { NotificationBell } from "../notification-bell";
 import { PostActions } from "../post-actions";
@@ -48,6 +49,7 @@ export function FamilyFeed({
   const savedSet = new Set(savedPostIds);
   const [composerOpen, setComposerOpen] = useState(false);
   const [reportTarget, setReportTarget] = useState<PostWithAuthor | null>(null);
+  const [editTarget, setEditTarget] = useState<PostWithAuthor | null>(null);
   const [vouchGateOpen, setVouchGateOpen] = useState(false);
   const searchParams = useSearchParams();
   // On mobile the family panel lives behind a drawer, not always on screen like
@@ -149,6 +151,7 @@ export function FamilyFeed({
                       initialFriendStatus={friendStatuses[post.author_id] ?? "none"}
                       requireAuth={requireAuth}
                       onReport={() => requireAuth(() => setReportTarget(post))}
+                      onEdit={() => setEditTarget(post)}
                       lightText={post.type === "text" && !!post.background}
                     />
                   }
@@ -218,6 +221,8 @@ export function FamilyFeed({
       <VouchGateModal open={vouchGateOpen} onClose={() => setVouchGateOpen(false)} guestId={profile.id} />
 
       <PostComposer open={composerOpen} onClose={() => setComposerOpen(false)} authorId={profile.id} audience="family" />
+
+      {editTarget && <EditPostModal key={editTarget.id} post={editTarget} onClose={() => setEditTarget(null)} />}
 
       {reportTarget && (
         <ReportModal

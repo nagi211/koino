@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { FriendshipStatus, PostWithAuthor, Profile } from "@koino/core";
+import { EditPostModal } from "../../edit-post-modal";
 import { NotificationBell } from "../../notification-bell";
 import { PostActions } from "../../post-actions";
 import { PostCard } from "../../post-card";
@@ -31,6 +32,7 @@ export function SinglePostView({
   openComments: boolean;
 }) {
   const [reportTarget, setReportTarget] = useState<PostWithAuthor | null>(null);
+  const [editTarget, setEditTarget] = useState<PostWithAuthor | null>(null);
   const [vouchGateOpen, setVouchGateOpen] = useState(false);
 
   // Same uniform rule as every other feed: comments/reports need an active
@@ -91,6 +93,7 @@ export function SinglePostView({
                     initialFriendStatus={friendStatus}
                     requireAuth={requireAuth}
                     onReport={() => requireAuth(() => setReportTarget(post))}
+                    onEdit={() => setEditTarget(post)}
                     lightText={post.type === "text" && !!post.background}
                   />
                 }
@@ -105,6 +108,8 @@ export function SinglePostView({
       </div>
 
       <VouchGateModal open={vouchGateOpen} onClose={() => setVouchGateOpen(false)} guestId={profile.id} />
+
+      {editTarget && <EditPostModal key={editTarget.id} post={editTarget} onClose={() => setEditTarget(null)} />}
 
       {reportTarget && (
         <ReportModal

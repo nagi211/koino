@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { FriendshipStatus, PostWithAuthor, Profile, StoryWithAuthor } from "@koino/core";
 import { AccountMenu } from "./account-menu";
 import { AuthModal } from "./auth-modal";
+import { EditPostModal } from "./edit-post-modal";
 import { FeedSwitcherTabs } from "./feed-switcher-tabs";
 import { NotificationBell } from "./notification-bell";
 import { PostActions } from "./post-actions";
@@ -47,6 +48,7 @@ export function Feed({
   const [authMode, setAuthMode] = useState<"sign-in" | "sign-up" | null>(null);
   const [composerOpen, setComposerOpen] = useState(false);
   const [reportTarget, setReportTarget] = useState<PostWithAuthor | null>(null);
+  const [editTarget, setEditTarget] = useState<PostWithAuthor | null>(null);
   const [scrolled, setScrolled] = useState(false);
 
   // Not logged in -> sign up. Logged in but still a guest -> the vouch gate,
@@ -158,6 +160,7 @@ export function Feed({
                     initialFriendStatus={friendStatuses[post.author_id] ?? "none"}
                     requireAuth={requireAuth}
                     onReport={() => requireAuth(() => setReportTarget(post))}
+                    onEdit={() => setEditTarget(post)}
                     lightText={post.type === "text" && !!post.background}
                   />
                 }
@@ -192,6 +195,8 @@ export function Feed({
       {profile && (
         <PostComposer open={composerOpen} onClose={() => setComposerOpen(false)} authorId={profile.id} />
       )}
+
+      {editTarget && <EditPostModal key={editTarget.id} post={editTarget} onClose={() => setEditTarget(null)} />}
 
       {profile && reportTarget && (
         <ReportModal

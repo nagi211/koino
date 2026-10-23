@@ -177,6 +177,17 @@ export async function createPost(client: SupabaseClient<Database>, authorId: str
   return data;
 }
 
+/**
+ * Lets the author correct their own post's caption after publishing — see
+ * 0044_edit_post_caption.sql. Every other column is pinned by that same
+ * policy, so this can only ever touch `body`.
+ */
+export async function updatePostBody(client: SupabaseClient<Database>, postId: string, body: string): Promise<Post> {
+  const { data, error } = await client.from("posts").update({ body: body || null }).eq("id", postId).select().single();
+  if (error) throw error;
+  return data;
+}
+
 export async function reportContent(client: SupabaseClient<Database>, reporterId: string, input: ReportInput) {
   const { error } = await client
     .from("reports")

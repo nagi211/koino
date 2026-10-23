@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import type { FriendshipStatus, FriendshipWithProfile, PostWithAuthor, Profile } from "@koino/core";
+import { EditPostModal } from "../edit-post-modal";
 import { FeedSwitcherTabs } from "../feed-switcher-tabs";
 import { NotificationBell } from "../notification-bell";
 import { FriendsPanel } from "../friends-panel";
@@ -48,6 +49,7 @@ export function FriendsFeed({
   const savedSet = new Set(savedPostIds);
   const [composerOpen, setComposerOpen] = useState(false);
   const [reportTarget, setReportTarget] = useState<PostWithAuthor | null>(null);
+  const [editTarget, setEditTarget] = useState<PostWithAuthor | null>(null);
   const [vouchGateOpen, setVouchGateOpen] = useState(false);
   const searchParams = useSearchParams();
   // On mobile the friends panel lives behind a drawer, not always on screen
@@ -139,6 +141,7 @@ export function FriendsFeed({
                       initialFriendStatus={friendStatuses[post.author_id] ?? "none"}
                       requireAuth={requireAuth}
                       onReport={() => requireAuth(() => setReportTarget(post))}
+                      onEdit={() => setEditTarget(post)}
                       lightText={post.type === "text" && !!post.background}
                     />
                   }
@@ -208,6 +211,8 @@ export function FriendsFeed({
       <VouchGateModal open={vouchGateOpen} onClose={() => setVouchGateOpen(false)} guestId={profile.id} />
 
       <PostComposer open={composerOpen} onClose={() => setComposerOpen(false)} authorId={profile.id} audience="friends" />
+
+      {editTarget && <EditPostModal key={editTarget.id} post={editTarget} onClose={() => setEditTarget(null)} />}
 
       {reportTarget && (
         <ReportModal
