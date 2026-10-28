@@ -5,6 +5,7 @@ import {
   getMyLikedPostIds,
   getMyProfile,
   getMySavedPostIds,
+  getPostTagsForPosts,
   getProfileByUsername,
   getUnreadMessageCount,
   getUnreadNotificationCount,
@@ -26,10 +27,11 @@ export default async function ProfilePostsPage({ params }: { params: Promise<{ u
   const posts = await getVisiblePostsByAuthor(supabase, target.id);
   const postIds = posts.map((post) => post.id);
 
-  const [likedPostIds, savedPostIds, friendStatuses, unreadNotificationCount, unreadMessageCount] = await Promise.all([
+  const [likedPostIds, savedPostIds, friendStatuses, tags, unreadNotificationCount, unreadMessageCount] = await Promise.all([
     getMyLikedPostIds(supabase, viewer.id, postIds).then((set) => Array.from(set)),
     getMySavedPostIds(supabase, viewer.id, postIds).then((set) => Array.from(set)),
     !isSelf ? getMyFriendStatuses(supabase, viewer.id, [target.id]) : Promise.resolve({} as Record<string, FriendshipStatus>),
+    getPostTagsForPosts(supabase, postIds),
     getUnreadNotificationCount(supabase, viewer.id),
     getUnreadMessageCount(supabase, viewer.id),
   ]);
@@ -39,6 +41,7 @@ export default async function ProfilePostsPage({ params }: { params: Promise<{ u
       profile={viewer}
       target={target}
       posts={posts}
+      tags={tags}
       likedPostIds={likedPostIds}
       savedPostIds={savedPostIds}
       friendStatus={friendStatuses[target.id] ?? "none"}

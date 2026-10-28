@@ -2,8 +2,20 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createPost, createPostSchema, POST_BACKGROUNDS, POST_TEXT_SIZE_RANGE, type PostAudience, type PostBackground } from "@koino/core";
+import {
+  createPost,
+  createPostSchema,
+  getFamily,
+  getFriends,
+  tagProfilesOnPost,
+  POST_BACKGROUNDS,
+  POST_TEXT_SIZE_RANGE,
+  type PostAudience,
+  type PostBackground,
+  type Profile,
+} from "@koino/core";
 import { createClient } from "@/lib/supabase/client";
+import { Avatar } from "./avatar";
 import { Modal } from "./modal";
 import { BACKGROUND_STYLES } from "./post-backgrounds";
 
@@ -101,6 +113,16 @@ export function PostComposer({
   // unposted content — lets the poster pick save-as-draft vs. discard
   // instead of just losing it.
   const [confirmingClose, setConfirmingClose] = useState(false);
+  // Who can be tagged — the poster's own confirmed friends + family, merged
+  // and deduped (family counts as an automatic friend everywhere else in the
+  // app — see 0038/0039 — so the pick list follows the same rule). Fetched
+  // lazily on open rather than threaded down as a prop, since PostComposer
+  // is mounted from four different page trees and none of them currently
+  // pass both lists all the way down.
+  const [tagCandidates, setTagCandidates] = useState<Profile[] | null>(null);
+  const [taggedIds, setTaggedIds] = useState<Set<string>>(new Set());
+  const [tagQuery, setTagQuery] = useState("");
+  const [showTagPicker, setShowTagPicker] = useState(false);
 
   // Picks up any draft left from a previous visit each time the composer
   // opens — a fixed audience/page context overrides whatever audience the
@@ -125,6 +147,24 @@ export function PostComposer({
         }
         setRestoredDraft(true);
       }
+      if (tagCandidates === null) {
+        const client = createClient();
+        Promise.all([getFriends(client, authorId), getFamily(client, authorId)]).then(([friends, family]) => {
+          const people: Profile[] = [];
+          const seenIds = new Set<string>();
+          for (const friend of friends) {
+            if (seenIds.has(friend.profile.id)) continue;
+            seenIds.add(friend.profile.id);
+            people.push(friend.profile);
+          }
+          for (const member of family) {
+            if (seenIds.has(member.profile.id)) continue;
+            seenIds.add(member.profile.id);
+            people.push(member.profile);
+          }
+          setTagCandidates(people);
+        });
+      }
     }
   }
 
@@ -144,6 +184,9 @@ export function PostComposer({
     setSelectedAudience(audienceOptions?.[0] ?? audience);
     setRestoredDraft(false);
     setConfirmingClose(false);
+    setTaggedIds(new Set());
+    setTagQuery("");
+    setShowTagPicker(false);
   }
 
   // Gates every close attempt (✕ button and backdrop click both route
@@ -227,7 +270,10 @@ export function PostComposer({
     try {
       // Every post publishes instantly now (see 0030_auto_approve_all_posts.sql) —
       // leaders/admins monitor recent posts afterward instead of pre-approving.
-      await createPost(client, authorId, parsed.data);
+      const newPost = await createPost(client, authorId, parsed.data);
+      if (taggedIds.size > 0) {
+        await tagProfilesOnPost(client, newPost.id, Array.from(taggedIds));
+      }
       clearDraft(authorId);
       setDone(true);
       router.refresh();
@@ -407,6 +453,89 @@ export function PostComposer({
                 onChange={(e) => setBody(e.target.value)}
               />
             </>
+          )}
+
+          {tagCandidates && tagCandidates.length > 0 && (
+            <div className="flex flex-col gap-2">
+              {taggedIds.size > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {tagCandidates
+                    .filter((person) => taggedIds.has(person.id))
+                    .map((person) => {
+                      const name = person.display_name ?? person.username;
+                      return (
+                        <span
+                          key={person.id}
+                          className="flex items-center gap-1 rounded-full border border-card-border bg-input px-2 py-1 text-xs text-foreground"
+                        >
+                          {name}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setTaggedIds((prev) => {
+                                const next = new Set(prev);
+                                next.delete(person.id);
+                                return next;
+                              })
+                            }
+                            aria-label={`Remove tag: ${name}`}
+                            className="text-muted hover:text-foreground"
+                          >
+                            ✕
+                          </button>
+                        </span>
+                      );
+                    })}
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => setShowTagPicker((v) => !v)}
+                className="self-start text-xs text-olive-dark hover:underline"
+              >
+                {showTagPicker ? "Done tagging" : taggedIds.size > 0 ? "Edit tags" : "Tag people"}
+              </button>
+              {showTagPicker && (
+                <div className="flex flex-col gap-2 rounded-xl border border-card-border p-3">
+                  <input
+                    type="text"
+                    value={tagQuery}
+                    onChange={(e) => setTagQuery(e.target.value)}
+                    placeholder="Search friends and family…"
+                    className="w-full rounded-lg border border-card-border bg-input px-3 py-1.5 text-sm text-foreground placeholder:text-muted outline-none"
+                  />
+                  <div className="flex max-h-40 flex-col gap-1 overflow-y-auto">
+                    {tagCandidates
+                      .filter((person) => (person.display_name ?? person.username).toLowerCase().includes(tagQuery.toLowerCase()))
+                      .map((person) => {
+                        const name = person.display_name ?? person.username;
+                        const isTagged = taggedIds.has(person.id);
+                        return (
+                          <button
+                            key={person.id}
+                            type="button"
+                            onClick={() =>
+                              setTaggedIds((prev) => {
+                                const next = new Set(prev);
+                                if (next.has(person.id)) next.delete(person.id);
+                                else next.add(person.id);
+                                return next;
+                              })
+                            }
+                            className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm ${
+                              isTagged ? "bg-input text-foreground" : "text-muted hover:text-foreground"
+                            }`}
+                          >
+                            <Avatar url={person.avatar_url} username={name} size={24} />
+                            {name}
+                            {isTagged && <span className="ml-auto text-xs text-olive-dark">Tagged</span>}
+                          </button>
+                        );
+                      })}
+                  </div>
+                </div>
+              )}
+            </div>
           )}
 
           {error && <p className="text-sm text-danger">{error}</p>}

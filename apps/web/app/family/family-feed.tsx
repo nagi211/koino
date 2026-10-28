@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import type { FamilyConnectionWithProfile, FriendshipStatus, PostWithAuthor, Profile } from "@koino/core";
+import type { FamilyConnectionWithProfile, FriendshipStatus, PostTagWithProfile, PostWithAuthor, Profile } from "@koino/core";
 import { EditPostModal } from "../edit-post-modal";
 import { FeedSwitcherTabs } from "../feed-switcher-tabs";
 import { NotificationBell } from "../notification-bell";
@@ -27,6 +27,7 @@ function HamburgerIcon() {
 export function FamilyFeed({
   profile,
   posts,
+  tags,
   likedPostIds,
   savedPostIds,
   friendStatuses,
@@ -37,6 +38,7 @@ export function FamilyFeed({
 }: {
   profile: Profile;
   posts: PostWithAuthor[];
+  tags: Record<string, PostTagWithProfile[]>;
   likedPostIds: string[];
   savedPostIds: string[];
   friendStatuses: Record<string, FriendshipStatus>;
@@ -132,6 +134,7 @@ export function FamilyFeed({
               <div className="w-full max-w-2xl">
                 <PostCard
                   post={post}
+                  tags={tags[post.id] ?? []}
                   actions={
                     <PostActions
                       post={post}

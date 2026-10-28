@@ -1,7 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import type { FamilyConnectionWithProfile, FriendshipStatus, FriendshipWithProfile, PostWithAuthor, Profile, StoryWithAuthor } from "@koino/core";
+import type {
+  FamilyConnectionWithProfile,
+  FriendshipStatus,
+  FriendshipWithProfile,
+  PostTagWithProfile,
+  PostWithAuthor,
+  Profile,
+  StoryWithAuthor,
+} from "@koino/core";
 import { Feed } from "./feed";
 import { HomeConnectionsPanel } from "./home-connections-panel";
 import { Sidebar } from "./sidebar";
@@ -9,6 +17,7 @@ import { Sidebar } from "./sidebar";
 export function AppShell({
   profile,
   posts,
+  tags,
   likedPostIds,
   savedPostIds,
   friendStatuses,
@@ -20,6 +29,7 @@ export function AppShell({
 }: {
   profile: Profile | null;
   posts: PostWithAuthor[];
+  tags: Record<string, PostTagWithProfile[]>;
   likedPostIds: string[];
   savedPostIds: string[];
   friendStatuses: Record<string, FriendshipStatus>;
@@ -58,6 +68,7 @@ export function AppShell({
       <Feed
         initialPosts={posts}
         profile={profile}
+        tags={tags}
         likedPostIds={likedPostIds}
         savedPostIds={savedPostIds}
         friendStatuses={friendStatuses}

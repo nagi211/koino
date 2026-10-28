@@ -7,6 +7,7 @@ export * from "./queries/vouch";
 export * from "./queries/messages";
 export * from "./queries/conversations";
 export * from "./queries/posts";
+export * from "./queries/post-tags";
 export * from "./queries/engagement";
 export * from "./queries/friends";
 export * from "./queries/family";

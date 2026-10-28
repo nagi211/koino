@@ -1,16 +1,20 @@
 import Image from "next/image";
 import Link from "next/link";
-import type { PostWithAuthor } from "@koino/core";
+import type { PostTagWithProfile, PostWithAuthor } from "@koino/core";
 import { Avatar } from "./avatar";
 import { PostDate } from "./post-date";
 import { BACKGROUND_STYLES } from "./post-backgrounds";
 
 export function PostCard({
   post,
+  tags,
   actions,
   menu,
 }: {
   post: PostWithAuthor;
+  /** Who the author tagged on this post — rendered as "— with @a, @b" under the
+   * byline, Facebook-style. Omitted/empty means no tags to show. */
+  tags?: PostTagWithProfile[];
   actions?: React.ReactNode;
   menu?: React.ReactNode;
 }) {
@@ -26,15 +30,33 @@ export function PostCard({
       }
     >
       <div className="mb-4 flex shrink-0 items-start justify-between">
-        <Link href={`/profile/${post.author_username}`} className="flex items-center gap-3">
-          <Avatar url={post.author_avatar_url} username={post.author_username} size={36} />
+        <div className="flex items-center gap-3">
+          <Link href={`/profile/${post.author_username}`}>
+            <Avatar url={post.author_avatar_url} username={post.author_username} size={36} />
+          </Link>
           <div className={`flex flex-col text-sm ${bg ? "text-white/80" : "text-muted"}`}>
-            <span className={`text-base font-semibold hover:underline ${bg ? "text-white" : "text-foreground"}`}>
-              @{post.author_username}
+            <span className={`text-base font-semibold ${bg ? "text-white" : "text-foreground"}`}>
+              <Link href={`/profile/${post.author_username}`} className="hover:underline">
+                @{post.author_username}
+              </Link>
+              {tags && tags.length > 0 && (
+                <span className={`font-normal ${bg ? "text-white/80" : "text-muted"}`}>
+                  {" "}
+                  — with{" "}
+                  {tags.map((tag, i) => (
+                    <span key={tag.tag_id}>
+                      {i > 0 && ", "}
+                      <Link href={`/profile/${tag.profile.username}`} className="hover:underline">
+                        @{tag.profile.username}
+                      </Link>
+                    </span>
+                  ))}
+                </span>
+              )}
             </span>
             <PostDate iso={post.created_at} />
           </div>
-        </Link>
+        </div>
         {menu}
       </div>
 

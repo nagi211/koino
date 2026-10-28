@@ -1,4 +1,4 @@
-import type { FamilyConnectionWithProfile, FriendshipStatus, FriendshipWithProfile } from "@koino/core";
+import type { FamilyConnectionWithProfile, FriendshipStatus, FriendshipWithProfile, PostTagWithProfile } from "@koino/core";
 import {
   getActiveStories,
   getApprovedFeed,
@@ -8,6 +8,7 @@ import {
   getMyLikedPostIds,
   getMyProfile,
   getMySavedPostIds,
+  getPostTagsForPosts,
   getUnreadMessageCount,
   getUnreadNotificationCount,
 } from "@koino/core";
@@ -34,6 +35,10 @@ export default async function Home() {
   const postIds = posts.map((post) => post.id);
   const authorIds = Array.from(new Set(posts.map((post) => post.author_id).filter((id) => id !== profile?.id)));
 
+  // Tags are visible to anyone who can see the post itself (0047_post_tags.sql)
+  // — not gated behind `profile`, same as posts/stories above.
+  const tags: Record<string, PostTagWithProfile[]> = await getPostTagsForPosts(supabase, postIds);
+
   let likedPostIds: string[] = [];
   let savedPostIds: string[] = [];
   let friendStatuses: Record<string, FriendshipStatus> = {};
@@ -58,6 +63,7 @@ export default async function Home() {
     <AppShell
       profile={profile}
       posts={posts}
+      tags={tags}
       likedPostIds={likedPostIds}
       savedPostIds={savedPostIds}
       friendStatuses={friendStatuses}

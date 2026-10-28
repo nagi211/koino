@@ -7,6 +7,7 @@ import {
   getMyProfile,
   getMySavedPostIds,
   getPendingFriendRequests,
+  getPostTagsForPosts,
   getUnreadMessageCount,
   getUnreadNotificationCount,
 } from "@koino/core";
@@ -36,11 +37,12 @@ export default async function FriendsPage() {
   const postIds = posts.map((post) => post.id);
   const authorIds = Array.from(new Set(posts.map((post) => post.author_id).filter((id) => id !== profile.id)));
 
-  const [likedPostIds, savedPostIds, friendStatuses, friends, pendingRequests, unreadNotificationCount, unreadMessageCount] =
+  const [likedPostIds, savedPostIds, friendStatuses, tags, friends, pendingRequests, unreadNotificationCount, unreadMessageCount] =
     await Promise.all([
       getMyLikedPostIds(supabase, profile.id, postIds).then((set) => Array.from(set)),
       getMySavedPostIds(supabase, profile.id, postIds).then((set) => Array.from(set)),
       getMyFriendStatuses(supabase, profile.id, authorIds),
+      getPostTagsForPosts(supabase, postIds),
       friendsPromise,
       pendingRequestsPromise,
       unreadNotificationCountPromise,
@@ -51,6 +53,7 @@ export default async function FriendsPage() {
     <FriendsFeed
       profile={profile}
       posts={posts}
+      tags={tags}
       likedPostIds={likedPostIds}
       savedPostIds={savedPostIds}
       friendStatuses={friendStatuses as Record<string, FriendshipStatus>}

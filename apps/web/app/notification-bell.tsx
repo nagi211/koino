@@ -10,6 +10,7 @@ import { Avatar } from "./avatar";
 const TYPE_COPY: Record<NotificationWithActor["type"], string> = {
   post_like: "liked your post",
   post_comment: "commented on your post",
+  post_tag: "tagged you in a post",
   profile_like: "liked your profile",
   profile_comment: "posted on your wall",
   friend_request: "sent you a friend request",
@@ -24,7 +25,7 @@ const TYPE_COPY: Record<NotificationWithActor["type"], string> = {
 };
 
 function targetHref(notification: NotificationWithActor): string {
-  if (notification.type === "post_like" || notification.type === "post_comment") {
+  if (notification.type === "post_like" || notification.type === "post_comment" || notification.type === "post_tag") {
     if (!notification.post_id) return "/";
     // A comment notification should land straight on the comments, not just
     // the post itself — see single-post-view.tsx's `openComments` prop.

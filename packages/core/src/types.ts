@@ -26,6 +26,7 @@ export type FamilyRelationship =
 export type NotificationType =
   | "post_like"
   | "post_comment"
+  | "post_tag"
   | "profile_like"
   | "profile_comment"
   | "friend_request"
@@ -253,6 +254,17 @@ export type SavedPost = {
   created_at: string;
 };
 
+export type PostTag = {
+  id: string;
+  post_id: string;
+  tagged_profile_id: string;
+  created_at: string;
+};
+
+// Mirrors FriendshipWithProfile's shape — a tag resolved to the tagged
+// person's own profile, for rendering "with @username" under a post.
+export type PostTagWithProfile = { tag_id: string; profile: Profile };
+
 export type Friendship = {
   id: string;
   requester_id: string;
@@ -394,6 +406,7 @@ export type Database = {
       post_likes: { Row: PostLike; Insert: Partial<PostLike> & { post_id: string; profile_id: string }; Update: Partial<PostLike>; Relationships: [] };
       post_comments: { Row: PostComment; Insert: Partial<PostComment> & { post_id: string; author_id: string; body: string }; Update: Partial<PostComment>; Relationships: [] };
       saved_posts: { Row: SavedPost; Insert: Partial<SavedPost> & { post_id: string; profile_id: string }; Update: Partial<SavedPost>; Relationships: [] };
+      post_tags: { Row: PostTag; Insert: Partial<PostTag> & { post_id: string; tagged_profile_id: string }; Update: Partial<PostTag>; Relationships: [] };
       friendships: { Row: Friendship; Insert: Partial<Friendship> & { requester_id: string; addressee_id: string }; Update: Partial<Friendship>; Relationships: [] };
       family_connections: {
         Row: FamilyConnection;

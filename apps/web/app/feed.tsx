@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { FriendshipStatus, PostWithAuthor, Profile, StoryWithAuthor } from "@koino/core";
+import type { FriendshipStatus, PostTagWithProfile, PostWithAuthor, Profile, StoryWithAuthor } from "@koino/core";
 import { AccountMenu } from "./account-menu";
 import { AuthModal } from "./auth-modal";
 import { EditPostModal } from "./edit-post-modal";
@@ -19,6 +19,7 @@ import { VouchGateModal } from "./vouch-gate-modal";
 export function Feed({
   initialPosts,
   profile,
+  tags,
   likedPostIds,
   savedPostIds,
   friendStatuses,
@@ -32,6 +33,7 @@ export function Feed({
 }: {
   initialPosts: PostWithAuthor[];
   profile: Profile | null;
+  tags: Record<string, PostTagWithProfile[]>;
   likedPostIds: string[];
   savedPostIds: string[];
   friendStatuses: Record<string, FriendshipStatus>;
@@ -141,6 +143,7 @@ export function Feed({
             <div className="w-full max-w-2xl">
               <PostCard
                 post={post}
+                tags={tags[post.id] ?? []}
                 actions={
                   <PostActions
                     post={post}
