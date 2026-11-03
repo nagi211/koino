@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import type { FriendshipStatus, FriendshipWithProfile, PostTagWithProfile, PostWithAuthor, Profile } from "@koino/core";
+import type { FriendshipStatus, FriendshipWithProfile, PostTagWithProfile, PostWithAuthor, Profile, StoryWithAuthor } from "@koino/core";
 import { EditPostModal } from "../edit-post-modal";
 import { FeedSwitcherTabs } from "../feed-switcher-tabs";
 import { NotificationBell } from "../notification-bell";
@@ -14,6 +14,7 @@ import { PostComposer } from "../post-composer";
 import { PostMenu } from "../post-menu";
 import { ReportModal } from "../report-modal";
 import { Sidebar } from "../sidebar";
+import { StoriesRow } from "../stories-row";
 import { VouchGateModal } from "../vouch-gate-modal";
 
 function HamburgerIcon() {
@@ -28,6 +29,7 @@ export function FriendsFeed({
   profile,
   posts,
   tags,
+  stories,
   likedPostIds,
   savedPostIds,
   friendStatuses,
@@ -39,6 +41,7 @@ export function FriendsFeed({
   profile: Profile;
   posts: PostWithAuthor[];
   tags: Record<string, PostTagWithProfile[]>;
+  stories: StoryWithAuthor[];
   likedPostIds: string[];
   savedPostIds: string[];
   friendStatuses: Record<string, FriendshipStatus>;
@@ -117,6 +120,10 @@ export function FriendsFeed({
             </button>
           </div>
         </header>
+
+        <div className="mx-auto w-full max-w-2xl shrink-0 px-3 pt-3 sm:px-8">
+          <StoriesRow stories={stories} profile={profile} requireAuth={requireAuth} audience="friends" />
+        </div>
 
         <ul className="min-h-0 flex-1 snap-y snap-mandatory overflow-y-auto">
           {posts.map((post) => (

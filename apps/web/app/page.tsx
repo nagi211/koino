@@ -1,6 +1,5 @@
 import type { FamilyConnectionWithProfile, FriendshipStatus, FriendshipWithProfile, PostTagWithProfile } from "@koino/core";
 import {
-  getActiveStories,
   getApprovedFeed,
   getFamily,
   getFriends,
@@ -19,18 +18,17 @@ export default async function Home() {
   const supabase = await createClient();
   const profilePromise = getMyProfile(supabase);
   const postsPromise = getApprovedFeed(supabase);
-  const storiesPromise = getActiveStories(supabase);
 
   const profile = await profilePromise;
 
-  // Only depend on profile.id, not on posts/stories — fired as soon as
-  // profile resolves instead of waiting on the other two as well.
+  // Only depend on profile.id, not on posts — fired as soon as profile
+  // resolves instead of waiting on posts as well.
   const unreadCountPromise = profile ? getUnreadNotificationCount(supabase, profile.id) : null;
   const unreadMessageCountPromise = profile ? getUnreadMessageCount(supabase, profile.id) : null;
   const friendsPromise = profile ? getFriends(supabase, profile.id) : null;
   const familyPromise = profile ? getFamily(supabase, profile.id) : null;
 
-  const [posts, stories] = await Promise.all([postsPromise, storiesPromise]);
+  const posts = await postsPromise;
 
   const postIds = posts.map((post) => post.id);
   const authorIds = Array.from(new Set(posts.map((post) => post.author_id).filter((id) => id !== profile?.id)));
@@ -69,7 +67,6 @@ export default async function Home() {
       friendStatuses={friendStatuses}
       friends={friends}
       family={family}
-      stories={stories}
       unreadNotificationCount={unreadNotificationCount}
       unreadMessageCount={unreadMessageCount}
     />

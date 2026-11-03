@@ -8,7 +8,6 @@ import type {
   PostTagWithProfile,
   PostWithAuthor,
   Profile,
-  StoryWithAuthor,
 } from "@koino/core";
 import { Feed } from "./feed";
 import { HomeConnectionsPanel } from "./home-connections-panel";
@@ -23,7 +22,6 @@ export function AppShell({
   friendStatuses,
   friends,
   family,
-  stories,
   unreadNotificationCount,
   unreadMessageCount,
 }: {
@@ -35,7 +33,6 @@ export function AppShell({
   friendStatuses: Record<string, FriendshipStatus>;
   friends: FriendshipWithProfile[];
   family: FamilyConnectionWithProfile[];
-  stories: StoryWithAuthor[];
   unreadNotificationCount: number;
   unreadMessageCount: number;
 }) {
@@ -72,7 +69,6 @@ export function AppShell({
         likedPostIds={likedPostIds}
         savedPostIds={savedPostIds}
         friendStatuses={friendStatuses}
-        stories={stories}
         unreadNotificationCount={unreadNotificationCount}
         unreadMessageCount={unreadMessageCount}
         vouchGateOpen={vouchGateOpen}

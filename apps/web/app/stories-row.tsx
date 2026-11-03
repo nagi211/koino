@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import type { Profile, StoryWithAuthor } from "@koino/core";
+import type { Profile, StoryAudience, StoryWithAuthor } from "@koino/core";
 import { Avatar } from "./avatar";
 import { StoryComposer } from "./story-composer";
 
@@ -10,10 +10,15 @@ export function StoriesRow({
   stories,
   profile,
   requireAuth,
+  audience,
 }: {
   stories: StoryWithAuthor[];
   profile: Profile | null;
   requireAuth: (action: () => void) => void;
+  /** Which circle this row belongs to — a story posted here only shows up on
+   * this same circle's feed, never the other, and never publicly (see
+   * 0048_story_audience.sql). */
+  audience: StoryAudience;
 }) {
   const [composerOpen, setComposerOpen] = useState(false);
   const [viewing, setViewing] = useState<StoryWithAuthor | null>(null);
@@ -52,7 +57,9 @@ export function StoriesRow({
         </button>
       ))}
 
-      {profile && <StoryComposer open={composerOpen} onClose={() => setComposerOpen(false)} authorId={profile.id} />}
+      {profile && (
+        <StoryComposer open={composerOpen} onClose={() => setComposerOpen(false)} authorId={profile.id} audience={audience} />
+      )}
 
       {viewing && (
         <div

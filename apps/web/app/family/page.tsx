@@ -3,6 +3,7 @@ import type { FriendshipStatus } from "@koino/core";
 import {
   getFamily,
   getFamilyFeed,
+  getFamilyStories,
   getMyFriendStatuses,
   getMyLikedPostIds,
   getMyProfile,
@@ -32,12 +33,13 @@ export default async function FamilyPage() {
   const pendingRequestsPromise = getPendingFamilyRequests(supabase, profile.id);
   const unreadNotificationCountPromise = getUnreadNotificationCount(supabase, profile.id);
   const unreadMessageCountPromise = getUnreadMessageCount(supabase, profile.id);
+  const storiesPromise = getFamilyStories(supabase);
 
   const posts = await getFamilyFeed(supabase);
   const postIds = posts.map((post) => post.id);
   const authorIds = Array.from(new Set(posts.map((post) => post.author_id).filter((id) => id !== profile.id)));
 
-  const [likedPostIds, savedPostIds, friendStatuses, tags, family, pendingRequests, unreadNotificationCount, unreadMessageCount] =
+  const [likedPostIds, savedPostIds, friendStatuses, tags, family, pendingRequests, unreadNotificationCount, unreadMessageCount, stories] =
     await Promise.all([
       getMyLikedPostIds(supabase, profile.id, postIds).then((set) => Array.from(set)),
       getMySavedPostIds(supabase, profile.id, postIds).then((set) => Array.from(set)),
@@ -47,6 +49,7 @@ export default async function FamilyPage() {
       pendingRequestsPromise,
       unreadNotificationCountPromise,
       unreadMessageCountPromise,
+      storiesPromise,
     ]);
 
   return (
@@ -54,6 +57,7 @@ export default async function FamilyPage() {
       profile={profile}
       posts={posts}
       tags={tags}
+      stories={stories}
       likedPostIds={likedPostIds}
       savedPostIds={savedPostIds}
       friendStatuses={friendStatuses as Record<string, FriendshipStatus>}

@@ -304,10 +304,14 @@ export type FamilyTreeEdge = {
   relationship: FamilyRelationship;
 };
 
+/** A story is never public — it's posted to one circle or the other (see 0048_story_audience.sql). */
+export type StoryAudience = "family" | "friends";
+
 export type Story = {
   id: string;
   author_id: string;
   media_url: string;
+  audience: StoryAudience;
   created_at: string;
   expires_at: string;
 };
@@ -414,7 +418,12 @@ export type Database = {
         Update: Partial<FamilyConnection>;
         Relationships: [];
       };
-      stories: { Row: Story; Insert: Partial<Story> & { author_id: string; media_url: string }; Update: Partial<Story>; Relationships: [] };
+      stories: {
+        Row: Story;
+        Insert: Partial<Story> & { author_id: string; media_url: string; audience: StoryAudience };
+        Update: Partial<Story>;
+        Relationships: [];
+      };
       top_friends: { Row: TopFriend; Insert: Partial<TopFriend> & { profile_id: string; friend_id: string; position: number }; Update: Partial<TopFriend>; Relationships: [] };
       profile_comments: { Row: ProfileComment; Insert: Partial<ProfileComment> & { profile_id: string; author_id: string; body: string }; Update: Partial<ProfileComment>; Relationships: [] };
       profile_likes: { Row: ProfileLike; Insert: Partial<ProfileLike> & { profile_id: string; liker_id: string }; Update: Partial<ProfileLike>; Relationships: [] };

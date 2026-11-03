@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { FriendshipStatus, PostTagWithProfile, PostWithAuthor, Profile, StoryWithAuthor } from "@koino/core";
+import type { FriendshipStatus, PostTagWithProfile, PostWithAuthor, Profile } from "@koino/core";
 import { AccountMenu } from "./account-menu";
 import { AuthModal } from "./auth-modal";
 import { EditPostModal } from "./edit-post-modal";
@@ -13,7 +13,6 @@ import { PostComposer } from "./post-composer";
 import { PostMenu } from "./post-menu";
 import { ReportModal } from "./report-modal";
 import { GuestBanner } from "./guest-banner";
-import { StoriesRow } from "./stories-row";
 import { VouchGateModal } from "./vouch-gate-modal";
 
 export function Feed({
@@ -23,7 +22,6 @@ export function Feed({
   likedPostIds,
   savedPostIds,
   friendStatuses,
-  stories,
   unreadNotificationCount,
   unreadMessageCount,
   vouchGateOpen,
@@ -37,7 +35,6 @@ export function Feed({
   likedPostIds: string[];
   savedPostIds: string[];
   friendStatuses: Record<string, FriendshipStatus>;
-  stories: StoryWithAuthor[];
   unreadNotificationCount: number;
   unreadMessageCount: number;
   vouchGateOpen: boolean;
@@ -51,7 +48,6 @@ export function Feed({
   const [composerOpen, setComposerOpen] = useState(false);
   const [reportTarget, setReportTarget] = useState<PostWithAuthor | null>(null);
   const [editTarget, setEditTarget] = useState<PostWithAuthor | null>(null);
-  const [scrolled, setScrolled] = useState(false);
 
   // Not logged in -> sign up. Logged in but still a guest -> the vouch gate,
   // not a silent RLS failure on submit (posting/commenting/reporting/stories
@@ -124,20 +120,7 @@ export function Feed({
         </div>
       )}
 
-      <div
-        className={`shrink-0 overflow-hidden transition-[max-height,opacity] duration-300 ${
-          scrolled ? "max-h-0 opacity-0" : "max-h-28 opacity-100"
-        }`}
-      >
-        <div className="mx-auto w-full max-w-2xl px-3 sm:px-8">
-          <StoriesRow stories={stories} profile={profile} requireAuth={requireAuth} />
-        </div>
-      </div>
-
-      <ul
-        className="min-h-0 flex-1 snap-y snap-mandatory overflow-y-auto"
-        onScroll={(e) => setScrolled(e.currentTarget.scrollTop > 10)}
-      >
+      <ul className="min-h-0 flex-1 snap-y snap-mandatory overflow-y-auto">
         {initialPosts.map((post) => (
           <li key={post.id} className="flex h-full w-full snap-start justify-center p-3 sm:p-8 [scroll-snap-stop:always]">
             <div className="w-full max-w-2xl">

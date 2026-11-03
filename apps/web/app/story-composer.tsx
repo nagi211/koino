@@ -2,18 +2,25 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createStory } from "@koino/core";
+import { createStory, type StoryAudience } from "@koino/core";
 import { createClient } from "@/lib/supabase/client";
 import { Modal } from "./modal";
+
+const AUDIENCE_LABELS: Record<StoryAudience, string> = {
+  family: "family",
+  friends: "friends",
+};
 
 export function StoryComposer({
   open,
   onClose,
   authorId,
+  audience,
 }: {
   open: boolean;
   onClose: () => void;
   authorId: string;
+  audience: StoryAudience;
 }) {
   const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
@@ -50,7 +57,7 @@ export function StoryComposer({
       const { error: uploadError } = await client.storage.from("post-media").upload(path, file);
       if (uploadError) throw uploadError;
       const mediaUrl = client.storage.from("post-media").getPublicUrl(path).data.publicUrl;
-      await createStory(client, authorId, mediaUrl);
+      await createStory(client, authorId, mediaUrl, audience);
       setDone(true);
       router.refresh();
     } catch (err) {
@@ -64,9 +71,12 @@ export function StoryComposer({
     <Modal open={open} onClose={handleClose}>
       <h2 className="mb-4 text-lg font-semibold text-foreground">Add to your story</h2>
       {done ? (
-        <p className="text-sm text-muted">Shared — visible to everyone for 24 hours.</p>
+        <p className="text-sm text-muted">Shared — visible to {AUDIENCE_LABELS[audience]} for 24 hours.</p>
       ) : (
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+          <p className="text-xs text-muted">
+            Visible to <span className="font-medium text-foreground">{AUDIENCE_LABELS[audience]}</span> for 24 hours.
+          </p>
           <input
             type="file"
             accept="image/*"
