@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { PostMedia, PostTagWithProfile, PostWithAuthor } from "@koino/core";
 import { Avatar } from "./avatar";
 import { PhotoCarousel } from "./photo-carousel";
+import { PostCaption } from "./post-caption";
 import { PostDate } from "./post-date";
 import { BACKGROUND_STYLES } from "./post-backgrounds";
 
@@ -32,8 +33,8 @@ export function PostCard({
     <div
       className={
         bg
-          ? `flex h-full w-full flex-col rounded-3xl bg-gradient-to-br p-6 shadow-lg sm:p-10 ${bg.gradient}`
-          : "flex h-full w-full flex-col rounded-3xl border border-card-border bg-card p-6 shadow-lg sm:p-8"
+          ? `flex h-full w-full flex-col overflow-y-auto rounded-3xl bg-gradient-to-br p-6 shadow-lg sm:p-10 ${bg.gradient}`
+          : "flex h-full w-full flex-col overflow-y-auto rounded-3xl border border-card-border bg-card p-6 shadow-lg sm:p-8"
       }
     >
       <div className="mb-4 flex shrink-0 items-start justify-between">
@@ -69,14 +70,16 @@ export function PostCard({
 
       {hasMedia ? (
         <>
-          <div className="relative min-h-0 flex-1 overflow-hidden rounded-2xl">
+          {/* A fixed aspect ratio, not flex-1 — the photo/video must never
+              shrink to make room for a long caption below it. */}
+          <div className="relative aspect-[4/5] w-full shrink-0 overflow-hidden rounded-2xl">
             {post.type === "image" ? (
               <PhotoCarousel urls={photoUrls} />
             ) : (
               <video src={post.media_url!} controls className="h-full w-full object-cover" />
             )}
           </div>
-          {post.body && <p className="mt-4 shrink-0 whitespace-pre-wrap font-serif text-lg text-foreground">{post.body}</p>}
+          {post.body && <PostCaption text={post.body} light={false} />}
         </>
       ) : (
         post.body && (
