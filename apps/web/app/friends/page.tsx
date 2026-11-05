@@ -8,6 +8,7 @@ import {
   getMyProfile,
   getMySavedPostIds,
   getPendingFriendRequests,
+  getPostMediaForPosts,
   getPostTagsForPosts,
   getUnreadMessageCount,
   getUnreadNotificationCount,
@@ -39,24 +40,36 @@ export default async function FriendsPage() {
   const postIds = posts.map((post) => post.id);
   const authorIds = Array.from(new Set(posts.map((post) => post.author_id).filter((id) => id !== profile.id)));
 
-  const [likedPostIds, savedPostIds, friendStatuses, tags, friends, pendingRequests, unreadNotificationCount, unreadMessageCount, stories] =
-    await Promise.all([
-      getMyLikedPostIds(supabase, profile.id, postIds).then((set) => Array.from(set)),
-      getMySavedPostIds(supabase, profile.id, postIds).then((set) => Array.from(set)),
-      getMyFriendStatuses(supabase, profile.id, authorIds),
-      getPostTagsForPosts(supabase, postIds),
-      friendsPromise,
-      pendingRequestsPromise,
-      unreadNotificationCountPromise,
-      unreadMessageCountPromise,
-      storiesPromise,
-    ]);
+  const [
+    likedPostIds,
+    savedPostIds,
+    friendStatuses,
+    tags,
+    media,
+    friends,
+    pendingRequests,
+    unreadNotificationCount,
+    unreadMessageCount,
+    stories,
+  ] = await Promise.all([
+    getMyLikedPostIds(supabase, profile.id, postIds).then((set) => Array.from(set)),
+    getMySavedPostIds(supabase, profile.id, postIds).then((set) => Array.from(set)),
+    getMyFriendStatuses(supabase, profile.id, authorIds),
+    getPostTagsForPosts(supabase, postIds),
+    getPostMediaForPosts(supabase, postIds),
+    friendsPromise,
+    pendingRequestsPromise,
+    unreadNotificationCountPromise,
+    unreadMessageCountPromise,
+    storiesPromise,
+  ]);
 
   return (
     <FriendsFeed
       profile={profile}
       posts={posts}
       tags={tags}
+      media={media}
       stories={stories}
       likedPostIds={likedPostIds}
       savedPostIds={savedPostIds}

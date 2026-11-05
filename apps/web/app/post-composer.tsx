@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  addPostMedia,
   createPost,
   createPostSchema,
   getFamily,
@@ -101,8 +102,10 @@ export function PostComposer({
   const [body, setBody] = useState("");
   const [background, setBackground] = useState<PostBackground | null>(null);
   const [textSize, setTextSize] = useState(DEFAULT_POST_TEXT_SIZE);
-  const [file, setFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  // Multiple for image posts (carousel), capped at one for video — see
+  // handleFileChange/handleRemoveFile.
+  const [files, setFiles] = useState<File[]>([]);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [done, setDone] = useState(false);
@@ -169,7 +172,7 @@ export function PostComposer({
   }
 
   function isFormEmpty() {
-    return !body.trim() && !file && !background;
+    return !body.trim() && files.length === 0 && !background;
   }
 
   function reset() {
@@ -177,8 +180,8 @@ export function PostComposer({
     setBody("");
     setBackground(null);
     setTextSize(DEFAULT_POST_TEXT_SIZE);
-    setFile(null);
-    setPreviewUrl(null);
+    setFiles([]);
+    setPreviewUrls([]);
     setError(null);
     setDone(false);
     setSelectedAudience(audienceOptions?.[0] ?? audience);
@@ -218,15 +221,26 @@ export function PostComposer({
 
   function switchType(next: PostType) {
     setType(next);
-    setFile(null);
-    setPreviewUrl(null);
+    setFiles([]);
+    setPreviewUrls([]);
     setError(null);
   }
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const picked = e.target.files?.[0] ?? null;
-    setFile(picked);
-    setPreviewUrl(picked ? URL.createObjectURL(picked) : null);
+    // Video stays single-file; images can pile up across multiple picks
+    // (the input stays empty after each pick, so selecting again adds more
+    // rather than replacing what's already there).
+    const picked = Array.from(e.target.files ?? []);
+    if (picked.length === 0) return;
+    const nextFiles = type === "video" ? [picked[0]] : [...files, ...picked];
+    setFiles(nextFiles);
+    setPreviewUrls(nextFiles.map((f) => URL.createObjectURL(f)));
+    e.target.value = "";
+  }
+
+  function handleRemoveFile(index: number) {
+    setFiles((prev) => prev.filter((_, i) => i !== index));
+    setPreviewUrls((prev) => prev.filter((_, i) => i !== index));
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -234,22 +248,26 @@ export function PostComposer({
     setError(null);
 
     let media_url: string | undefined;
+    const mediaUrls: string[] = [];
     const client = createClient();
 
     if (type !== "text") {
-      if (!file) {
-        setError(type === "image" ? "Choose a photo to upload" : "Choose a video to upload");
+      if (files.length === 0) {
+        setError(type === "image" ? "Choose at least one photo to upload" : "Choose a video to upload");
         return;
       }
       setPending(true);
-      const path = `${authorId}/${Date.now()}-${file.name}`;
-      const { error: uploadError } = await client.storage.from("post-media").upload(path, file);
-      if (uploadError) {
-        setError(uploadError.message);
-        setPending(false);
-        return;
+      for (const [i, file] of files.entries()) {
+        const path = `${authorId}/${Date.now()}-${i}-${file.name}`;
+        const { error: uploadError } = await client.storage.from("post-media").upload(path, file);
+        if (uploadError) {
+          setError(uploadError.message);
+          setPending(false);
+          return;
+        }
+        mediaUrls.push(client.storage.from("post-media").getPublicUrl(path).data.publicUrl);
       }
-      media_url = client.storage.from("post-media").getPublicUrl(path).data.publicUrl;
+      media_url = mediaUrls[0];
     }
 
     const parsed = createPostSchema.safeParse({
@@ -271,6 +289,9 @@ export function PostComposer({
       // Every post publishes instantly now (see 0030_auto_approve_all_posts.sql) —
       // leaders/admins monitor recent posts afterward instead of pre-approving.
       const newPost = await createPost(client, authorId, parsed.data);
+      if (type === "image" && mediaUrls.length > 0) {
+        await addPostMedia(client, newPost.id, mediaUrls);
+      }
       if (taggedIds.size > 0) {
         await tagProfilesOnPost(client, newPost.id, Array.from(taggedIds));
       }
@@ -432,19 +453,34 @@ export function PostComposer({
               <input
                 type="file"
                 accept={type === "image" ? "image/*" : "video/*"}
+                multiple={type === "image"}
                 onChange={handleFileChange}
                 className="text-sm text-muted file:mr-3 file:rounded-xl file:border-0 file:bg-input file:px-3 file:py-1.5 file:text-foreground"
               />
-              {restoredDraft && !file && (
+              {restoredDraft && files.length === 0 && (
                 <p className="text-xs text-muted">This draft had a {type} attached — re-select it to finish posting.</p>
               )}
-              {previewUrl &&
-                (type === "image" ? (
-                  // eslint-disable-next-line @next/next/no-img-element -- local blob preview, not a stored asset
-                  <img src={previewUrl} alt="Preview" className="max-h-64 w-full rounded-xl object-cover" />
-                ) : (
-                  <video src={previewUrl} controls className="max-h-64 w-full rounded-xl" />
-                ))}
+              {type === "image" && previewUrls.length > 0 && (
+                <div className="flex gap-2 overflow-x-auto">
+                  {previewUrls.map((url, i) => (
+                    <div key={url} className="relative shrink-0">
+                      {/* eslint-disable-next-line @next/next/no-img-element -- local blob preview, not a stored asset */}
+                      <img src={url} alt="" className="h-24 w-24 rounded-xl object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveFile(i)}
+                        aria-label="Remove photo"
+                        className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-black/70 text-xs text-white"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {type === "video" && previewUrls[0] && (
+                <video src={previewUrls[0]} controls className="max-h-64 w-full rounded-xl" />
+              )}
               <textarea
                 className={textareaClasses}
                 placeholder="Add a caption (optional)"
@@ -528,7 +564,7 @@ export function PostComposer({
                           >
                             <Avatar url={person.avatar_url} username={name} size={24} />
                             {name}
-                            {isTagged && <span className="ml-auto text-xs text-olive-dark">Tagged</span>}
+                            {isTagged && <span className="ml-auto text-xs text-danger">Remove</span>}
                           </button>
                         );
                       })}

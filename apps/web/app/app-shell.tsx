@@ -5,6 +5,7 @@ import type {
   FamilyConnectionWithProfile,
   FriendshipStatus,
   FriendshipWithProfile,
+  PostMedia,
   PostTagWithProfile,
   PostWithAuthor,
   Profile,
@@ -17,6 +18,7 @@ export function AppShell({
   profile,
   posts,
   tags,
+  media,
   likedPostIds,
   savedPostIds,
   friendStatuses,
@@ -28,6 +30,7 @@ export function AppShell({
   profile: Profile | null;
   posts: PostWithAuthor[];
   tags: Record<string, PostTagWithProfile[]>;
+  media: Record<string, PostMedia[]>;
   likedPostIds: string[];
   savedPostIds: string[];
   friendStatuses: Record<string, FriendshipStatus>;
@@ -66,6 +69,7 @@ export function AppShell({
         initialPosts={posts}
         profile={profile}
         tags={tags}
+        media={media}
         likedPostIds={likedPostIds}
         savedPostIds={savedPostIds}
         friendStatuses={friendStatuses}

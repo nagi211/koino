@@ -1,4 +1,4 @@
-import type { FamilyConnectionWithProfile, FriendshipStatus, FriendshipWithProfile, PostTagWithProfile } from "@koino/core";
+import type { FamilyConnectionWithProfile, FriendshipStatus, FriendshipWithProfile, PostMedia, PostTagWithProfile } from "@koino/core";
 import {
   getApprovedFeed,
   getFamily,
@@ -7,6 +7,7 @@ import {
   getMyLikedPostIds,
   getMyProfile,
   getMySavedPostIds,
+  getPostMediaForPosts,
   getPostTagsForPosts,
   getUnreadMessageCount,
   getUnreadNotificationCount,
@@ -33,9 +34,13 @@ export default async function Home() {
   const postIds = posts.map((post) => post.id);
   const authorIds = Array.from(new Set(posts.map((post) => post.author_id).filter((id) => id !== profile?.id)));
 
-  // Tags are visible to anyone who can see the post itself (0047_post_tags.sql)
-  // — not gated behind `profile`, same as posts/stories above.
-  const tags: Record<string, PostTagWithProfile[]> = await getPostTagsForPosts(supabase, postIds);
+  // Tags and media are visible to anyone who can see the post itself
+  // (0047_post_tags.sql, 0049_post_media.sql) — not gated behind `profile`,
+  // same as posts/stories above.
+  const [tags, media]: [Record<string, PostTagWithProfile[]>, Record<string, PostMedia[]>] = await Promise.all([
+    getPostTagsForPosts(supabase, postIds),
+    getPostMediaForPosts(supabase, postIds),
+  ]);
 
   let likedPostIds: string[] = [];
   let savedPostIds: string[] = [];
@@ -62,6 +67,7 @@ export default async function Home() {
       profile={profile}
       posts={posts}
       tags={tags}
+      media={media}
       likedPostIds={likedPostIds}
       savedPostIds={savedPostIds}
       friendStatuses={friendStatuses}

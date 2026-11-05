@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import type { FriendshipStatus, PostTagWithProfile, PostWithAuthor, Profile } from "@koino/core";
+import type { FriendshipStatus, PostMedia, PostTagWithProfile, PostWithAuthor, Profile } from "@koino/core";
 import { EditPostModal } from "../../edit-post-modal";
 import { NotificationBell } from "../../notification-bell";
 import { PostActions } from "../../post-actions";
@@ -16,6 +16,7 @@ export function SinglePostView({
   profile,
   post,
   tags,
+  media,
   likedPostIds,
   savedPostIds,
   friendStatus,
@@ -26,6 +27,7 @@ export function SinglePostView({
   profile: Profile;
   post: PostWithAuthor | null;
   tags: Record<string, PostTagWithProfile[]>;
+  media: Record<string, PostMedia[]>;
   likedPostIds: string[];
   savedPostIds: string[];
   friendStatus: FriendshipStatus;
@@ -76,6 +78,7 @@ export function SinglePostView({
               <PostCard
                 post={post}
                 tags={tags[post.id] ?? []}
+                media={media[post.id] ?? []}
                 actions={
                   <PostActions
                     post={post}

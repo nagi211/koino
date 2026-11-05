@@ -5,6 +5,7 @@ import {
   getMyLikedPostIds,
   getMyProfile,
   getMySavedPostIds,
+  getPostMediaForPosts,
   getPostsByIds,
   getPostTagsForPosts,
   getUnreadMessageCount,
@@ -34,13 +35,14 @@ export default async function SinglePostPage({
   const post = posts[0] ?? null;
   const isSelf = post?.author_id === viewer.id;
 
-  const [likedPostIds, savedPostIds, friendStatuses, tags, unreadNotificationCount, unreadMessageCount] = await Promise.all([
+  const [likedPostIds, savedPostIds, friendStatuses, tags, media, unreadNotificationCount, unreadMessageCount] = await Promise.all([
     post ? getMyLikedPostIds(supabase, viewer.id, [post.id]).then((set) => Array.from(set)) : Promise.resolve([]),
     post ? getMySavedPostIds(supabase, viewer.id, [post.id]).then((set) => Array.from(set)) : Promise.resolve([]),
     post && !isSelf
       ? getMyFriendStatuses(supabase, viewer.id, [post.author_id])
       : Promise.resolve({} as Record<string, FriendshipStatus>),
     post ? getPostTagsForPosts(supabase, [post.id]) : Promise.resolve({}),
+    post ? getPostMediaForPosts(supabase, [post.id]) : Promise.resolve({}),
     getUnreadNotificationCount(supabase, viewer.id),
     getUnreadMessageCount(supabase, viewer.id),
   ]);
@@ -50,6 +52,7 @@ export default async function SinglePostPage({
       profile={viewer}
       post={post}
       tags={tags}
+      media={media}
       likedPostIds={likedPostIds}
       savedPostIds={savedPostIds}
       friendStatus={post ? friendStatuses[post.author_id] ?? "none" : "none"}

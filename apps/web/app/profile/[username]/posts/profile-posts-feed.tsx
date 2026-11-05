@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import type { FriendshipStatus, PostTagWithProfile, PostWithAuthor, Profile } from "@koino/core";
+import type { FriendshipStatus, PostMedia, PostTagWithProfile, PostWithAuthor, Profile } from "@koino/core";
 import { AccountMenu } from "../../../account-menu";
 import { EditPostModal } from "../../../edit-post-modal";
 import { NotificationBell } from "../../../notification-bell";
@@ -18,6 +18,7 @@ export function ProfilePostsFeed({
   target,
   posts,
   tags,
+  media,
   likedPostIds,
   savedPostIds,
   friendStatus,
@@ -28,6 +29,7 @@ export function ProfilePostsFeed({
   target: Profile;
   posts: PostWithAuthor[];
   tags: Record<string, PostTagWithProfile[]>;
+  media: Record<string, PostMedia[]>;
   likedPostIds: string[];
   savedPostIds: string[];
   friendStatus: FriendshipStatus;
@@ -90,6 +92,7 @@ export function ProfilePostsFeed({
                 <PostCard
                   post={post}
                   tags={tags[post.id] ?? []}
+                  media={media[post.id] ?? []}
                   actions={
                     <PostActions
                       post={post}

@@ -3,7 +3,15 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import type { FamilyConnectionWithProfile, FriendshipStatus, PostTagWithProfile, PostWithAuthor, Profile, StoryWithAuthor } from "@koino/core";
+import type {
+  FamilyConnectionWithProfile,
+  FriendshipStatus,
+  PostMedia,
+  PostTagWithProfile,
+  PostWithAuthor,
+  Profile,
+  StoryWithAuthor,
+} from "@koino/core";
 import { EditPostModal } from "../edit-post-modal";
 import { FeedSwitcherTabs } from "../feed-switcher-tabs";
 import { NotificationBell } from "../notification-bell";
@@ -29,6 +37,7 @@ export function FamilyFeed({
   profile,
   posts,
   tags,
+  media,
   stories,
   likedPostIds,
   savedPostIds,
@@ -41,6 +50,7 @@ export function FamilyFeed({
   profile: Profile;
   posts: PostWithAuthor[];
   tags: Record<string, PostTagWithProfile[]>;
+  media: Record<string, PostMedia[]>;
   stories: StoryWithAuthor[];
   likedPostIds: string[];
   savedPostIds: string[];
@@ -142,6 +152,7 @@ export function FamilyFeed({
                 <PostCard
                   post={post}
                   tags={tags[post.id] ?? []}
+                  media={media[post.id] ?? []}
                   actions={
                     <PostActions
                       post={post}

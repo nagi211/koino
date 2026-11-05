@@ -1,17 +1,23 @@
-import Image from "next/image";
 import Link from "next/link";
-import type { PostTagWithProfile, PostWithAuthor } from "@koino/core";
+import type { PostMedia, PostTagWithProfile, PostWithAuthor } from "@koino/core";
 import { Avatar } from "./avatar";
+import { PhotoCarousel } from "./photo-carousel";
 import { PostDate } from "./post-date";
 import { BACKGROUND_STYLES } from "./post-backgrounds";
 
 export function PostCard({
   post,
+  media,
   tags,
   actions,
   menu,
 }: {
   post: PostWithAuthor;
+  /** Every photo on this post, in order — including the first/cover one that
+   * also lives in post.media_url for backward compat. Omitted/empty on a
+   * post with no post_media rows (video posts, or an image post created
+   * before this existed) falls back to the single post.media_url. */
+  media?: PostMedia[];
   /** Who the author tagged on this post — rendered as "— with @a, @b" under the
    * byline, Facebook-style. Omitted/empty means no tags to show. */
   tags?: PostTagWithProfile[];
@@ -19,7 +25,8 @@ export function PostCard({
   menu?: React.ReactNode;
 }) {
   const bg = post.type === "text" && post.background ? BACKGROUND_STYLES[post.background as keyof typeof BACKGROUND_STYLES] : null;
-  const hasMedia = (post.type === "image" || post.type === "video") && post.media_url;
+  const photoUrls = media && media.length > 0 ? media.map((m) => m.media_url) : post.media_url ? [post.media_url] : [];
+  const hasMedia = (post.type === "image" && photoUrls.length > 0) || (post.type === "video" && post.media_url);
 
   return (
     <div
@@ -64,7 +71,7 @@ export function PostCard({
         <>
           <div className="relative min-h-0 flex-1 overflow-hidden rounded-2xl">
             {post.type === "image" ? (
-              <Image src={post.media_url!} alt="" fill className="object-cover" />
+              <PhotoCarousel urls={photoUrls} />
             ) : (
               <video src={post.media_url!} controls className="h-full w-full object-cover" />
             )}
