@@ -33,8 +33,8 @@ export function PostCard({
     <div
       className={
         bg
-          ? `flex h-full w-full flex-col overflow-y-auto rounded-3xl bg-gradient-to-br p-6 shadow-lg sm:p-10 ${bg.gradient}`
-          : "flex h-full w-full flex-col overflow-y-auto rounded-3xl border border-card-border bg-card p-6 shadow-lg sm:p-8"
+          ? `flex h-full w-full flex-col rounded-3xl bg-gradient-to-br p-6 shadow-lg sm:p-10 ${bg.gradient}`
+          : "flex h-full w-full flex-col rounded-3xl border border-card-border bg-card p-6 shadow-lg sm:p-8"
       }
     >
       <div className="mb-4 flex shrink-0 items-start justify-between">
@@ -70,16 +70,21 @@ export function PostCard({
 
       {hasMedia ? (
         <>
-          {/* A fixed aspect ratio, not flex-1 — the photo/video must never
-              shrink to make room for a long caption below it. */}
-          <div className="relative aspect-[4/5] w-full shrink-0 overflow-hidden rounded-2xl">
+          {/* The media takes whatever height is left — and that's a constant,
+              because the caption slot below is a fixed height whether the
+              caption is short, long, collapsed or expanded (see PostCaption).
+              Letterboxed (object-contain) so the whole photo/video is always
+              visible, never cropped to fit. */}
+          <div className="relative min-h-0 flex-1 overflow-hidden rounded-2xl bg-black">
             {post.type === "image" ? (
-              <PhotoCarousel urls={photoUrls} />
+              <PhotoCarousel urls={photoUrls} caption={post.body} author={post.author_username} />
             ) : (
-              <video src={post.media_url!} controls className="h-full w-full object-cover" />
+              <video src={post.media_url!} controls className="h-full w-full object-contain" />
             )}
           </div>
-          {post.body && <PostCaption text={post.body} light={false} />}
+          {/* Reserved even with no caption, so every photo/video post's media
+              area is the same size in the feed. */}
+          {post.body ? <PostCaption text={post.body} /> : <div className="mt-4 h-28 shrink-0" />}
         </>
       ) : (
         post.body && (
