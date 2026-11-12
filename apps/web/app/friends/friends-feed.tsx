@@ -66,6 +66,7 @@ export function FriendsFeed({
   const [reportTarget, setReportTarget] = useState<PostWithAuthor | null>(null);
   const [editTarget, setEditTarget] = useState<PostWithAuthor | null>(null);
   const [vouchGateOpen, setVouchGateOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const searchParams = useSearchParams();
   // On mobile the friends panel lives behind a drawer, not always on screen
   // like it is on desktop (lg:block aside below) — a notification linking
@@ -131,11 +132,23 @@ export function FriendsFeed({
           </div>
         </header>
 
-        <div className="mx-auto w-full max-w-2xl shrink-0 px-3 pt-3 sm:px-8">
-          <StoriesRow stories={stories} profile={profile} requireAuth={requireAuth} audience="friends" />
+        {/* Collapses once the reader scrolls past the first post, giving the
+            feed the full height — same behavior the home feed had back when
+            stories lived there. */}
+        <div
+          className={`shrink-0 overflow-hidden transition-[max-height,opacity] duration-300 ${
+            scrolled ? "max-h-0 opacity-0" : "max-h-28 opacity-100"
+          }`}
+        >
+          <div className="mx-auto w-full max-w-2xl px-3 pt-3 sm:px-8">
+            <StoriesRow stories={stories} profile={profile} requireAuth={requireAuth} audience="friends" />
+          </div>
         </div>
 
-        <ul className="min-h-0 flex-1 snap-y snap-mandatory overflow-y-auto">
+        <ul
+          className="min-h-0 flex-1 snap-y snap-mandatory overflow-y-auto"
+          onScroll={(e) => setScrolled(e.currentTarget.scrollTop > 10)}
+        >
           {posts.map((post) => (
             <li key={post.id} className="flex h-full w-full snap-start justify-center p-3 sm:p-8 [scroll-snap-stop:always]">
               <div className="w-full max-w-2xl">
